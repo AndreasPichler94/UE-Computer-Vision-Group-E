@@ -29,9 +29,9 @@ render_fov = 50
 
 if 'window' not in locals() or window == None:
                                     
-    window = pyaos.PyGlfwWindow( w, h, 'AOS' )  
+    window = pyaos.PyGlfwWindow(w, h, 'AOS')
      
-aos = pyaos.PyAOS(w,h,fovDegrees) 
+aos = pyaos.PyAOS(w, h, fovDegrees)
 
 
 set_folder = r'Enter path to your LFR/python directory'          # Enter path to your LFR/python directory

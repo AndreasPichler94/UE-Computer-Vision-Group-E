@@ -6,7 +6,7 @@ import os
 import math
 from LFR_utils import read_poses_and_images,pose_to_virtualcamera, init_aos, init_window
 import LFR_utils as utils
-import pyaos
+from LFR.python import pyaos
 import glm
 
 

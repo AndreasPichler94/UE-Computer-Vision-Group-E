@@ -15,7 +15,7 @@ Then, install desktop development with c++
 
 	- Install python and Jupyter extensions.
 
-**  Open the Computervision_project.ipynb script ("Make sure that this script is inside the LFR/python folder") in the VS code. Select and set kernel on the top right to python 3.7.9. Open a new terminal (Terminal > New Terminal). 
+**  Open the AOS_integrator.ipynb script ("Make sure that this script is inside the LFR/python folder") in the VS code. Select and set kernel on the top right to python 3.7.9. Open a new terminal (Terminal > New Terminal). 
 
 **  Set the working directory to LFR/python. Now run the command pip install -r requirements.txt in the terminal. This will take a few minutes.
 

@@ -53,7 +53,8 @@ The parameter file is organized as follows (this is an example for 0_1372_Parame
 
 ---------------------------------------------------------------
 
-img_GT (0, 0, 35, 0.0, 1.57, 0)		--> pose for ground truth image (R_S_pose_0..10_thermal.png), (y,x,z,rot y,rot x,rot z), z=altitude in meters above ground level, (0.0, 1.57, 0)=camera pointing downwards  
+img
+_GT (0, 0, 35, 0.0, 1.57, 0)		--> pose for ground truth image (R_S_pose_0..10_thermal.png), (y,x,z,rot y,rot x,rot z), z=altitude in meters above ground level, (0.0, 1.57, 0)=camera pointing downwards
 
 img_1 (0, -5, 35, 0.0, 1.57, 0)		--> poses for other perspectives (as above), (y,x,z) in meters, (rot y,rot x,rot z). The x and y values have to be multiplied with (-) sign.   
 img_2 (0, -4, 35, 0.0, 1.57, 0)

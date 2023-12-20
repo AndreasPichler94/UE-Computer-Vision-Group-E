@@ -1,0 +1,29 @@
+
+
+# Generate the dataset for training
+
+1. Generate cleaned dataset
+	- 95% of original samples go into "train" dataset
+	- remaining 5% end up in "test" dataset
+
+2. Add the AOS integral to the cleaned data for train & test
+
+
+# Set up training utils
+
+Jakob:
+
+3. Write a PyTorch data loader for the cleaned data
+
+
+Jaroslav:
+
+4. Write a method that allows the evaluation of a model (track test loss, image quality metric)
+
+	- need a test loader, and a model
+
+
+Jakob: 
+
+5. Checkpointing system to easily back up / load models locally
+

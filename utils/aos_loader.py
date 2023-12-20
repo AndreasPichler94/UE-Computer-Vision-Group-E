@@ -1,9 +1,9 @@
-import os
 import glob
-import torch
+import os
+
 from PIL import Image
-from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
 
 
 def get_test_dataloader(focal_height=1.0, image_resolution=(128, 128)):

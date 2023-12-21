@@ -31,10 +31,8 @@ def split_data(total_sequences, train_percentage):
                 shutil.move(source_path, destination_file)
             else:
                 print(f"File not found: {source_path}")
-
-    print(
-        f"Data split into {train_percentage * 100}% training ({train_size} Sequences) and {100 - train_percentage * 100}% validation ({total_sequences - train_size} Sequences).")
-
+    if not last_valid_sequence == 0:
+        print(f"Data split into {train_percentage * 100}% training ({train_size} Sequences) and {100 - train_percentage * 100}% validation ({total_sequences - train_size} Sequences).")
 
 def get_expected_files(current_index):
     expected_files = set()
@@ -47,7 +45,6 @@ def get_expected_files(current_index):
 
     return expected_files
 
-
 def rename_files(current_index):
     expected_files = get_expected_files(current_index)
     for expected_file in expected_files:
@@ -56,9 +53,8 @@ def rename_files(current_index):
         new_file = expected_file.replace(f'0_{current_index}', f'0_{new_index}')
         new_path = os.path.join(raw_directory_path, new_file)
         os.rename(old_path, new_path)
-    print(f"Renamed sequences with index {current_index} to {last_valid_sequence + 1}.")
+    #print(f"Renamed sequences with index {current_index} to {last_valid_sequence + 1}")
     return new_index
-
 
 def cleanup_data():
     global last_valid_sequence
@@ -96,14 +92,14 @@ def cleanup_data():
     if not invalid_sequences_found:
         print("No invalid sequences found.")
 
-    print(f"Total sequences after renaming: {last_valid_sequence + 1}")
+    if not last_valid_sequence == 0:
+        print(f"Total sequences after renaming: {last_valid_sequence}")
     return last_valid_sequence + 1
 
-
 if __name__ == "__main__":
-    raw_directory_path = "C:\\Users\\andreaspichler\\Desktop\\Part1"
-    training_data_path = "C:\\Users\\andreaspichler\\Desktop\\TrainData"
-    validation_data_path = "C:\\Users\\andreaspichler\\Desktop\\ValidationData"
+    raw_directory_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..')), 'data')
+    training_data_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..')), 'train')
+    validation_data_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..')), 'test')
     train_percentage = 0.8
 
     total_sequences = cleanup_data()

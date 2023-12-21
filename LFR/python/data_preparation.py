@@ -97,6 +97,7 @@ def cleanup_data():
     return last_valid_sequence + 1
 
 if __name__ == "__main__":
+    #requires three folders in the root directory (Computer-Vision-Project/data/<raw, train, test>)
     raw_directory_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..')), 'data')
     training_data_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..')), 'train')
     validation_data_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..')), 'test')

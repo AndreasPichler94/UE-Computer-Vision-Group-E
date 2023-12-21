@@ -1,0 +1,35 @@
+Deliverables:
+
+
+- custom data loader
+	- load out of cloud or locally? (hybrid?)
+
+- training loop with performance evaluation
+	- track train/test loss
+
+- checkpointing system with cloud backups
+	- Google Drive or just github?
+
+- hyperparameter training framework (grid search?)
+
+- baby network for testing purposes
+
+- U-Net, Vision Transf., Deeplab
+
+
+
+Strategies:
+
+- Code should also run offline on our PCs
+
+- Program to an interface
+	- networks should easily be swapped out with no code changes required
+	- same goes for loss functions
+
+- Code should default to CUDA, but fallback to CPU
+
+- Keep it organized
+	- split up code across files
+
+- Use version control (github)
+

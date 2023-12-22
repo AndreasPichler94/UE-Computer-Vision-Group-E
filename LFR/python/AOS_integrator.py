@@ -1,30 +1,33 @@
-
-## Import libraries section ##
+# Import libraries section
 import numpy as np
 import cv2
 import os
 import math
+
 from LFR_utils import read_poses_and_images,pose_to_virtualcamera, init_aos, init_window
 import LFR_utils as utils
 from LFR.python import pyaos
 import glm
+import re
+import glob
 
+training_data_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..')), 'data','train')
+validation_data_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..')), 'data','test')
 
 ## path to where the results will be stored 
 
-Download_Location = r'ENTER PATH'    ## Enter path to the directory where you want to save the results.
+Download_Location = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), os.pardir, 'results')) # Enter path to the directory where you want to save the results.
 print(Download_Location)
-Integral_Path = os.path.join(Download_Location,'integrals') # Note that your results will be saved to this integrals folder.
+Integral_Path = os.path.join(Download_Location,'integrals')
 
-# Check if the directory already exists
 if not os.path.exists(Integral_Path):
     os.mkdir(Integral_Path)
 else:
     print(f"The directory '{Integral_Path}' already exists.")
 
-
 #############################Start the AOS Renderer###############################################################
-w,h,fovDegrees = 512, 512, 50 # # resolution and field of view. This should not be changed.
+
+w,h,fovDegrees = 512, 512, 50 # resolution and field of view. This should not be changed.
 render_fov = 50
 
 if 'window' not in locals() or window == None:
@@ -33,15 +36,12 @@ if 'window' not in locals() or window == None:
      
 aos = pyaos.PyAOS(w, h, fovDegrees)
 
-
-set_folder = r'Enter path to your LFR/python directory'          # Enter path to your LFR/python directory
-aos.loadDEM( os.path.join(set_folder,'zero_plane.obj'))
-
-####################################################################################################################
+set_folder = r'C:\Users\andreaspichler\Desktop\Computer-Vision-Project\LFR\python' # Enter path to your LFR/python directory
+aos.loadDEM(os.path.join(set_folder,'zero_plane.obj'))
 
 #############################Create Poses for Initial Positions###############################################################
 
-# Below are certain functions required to convert the poses to a certain format to be compatabile with the AOS Renderer.
+# Below are certain functions required to convert the poses to a certain format to be compiled with the AOS Renderer.
 
 def eul2rotm(theta) :
     s_1 = math.sin(theta[0])
@@ -89,13 +89,11 @@ def pose_to_virtualcamera(vpose ):
     #print(cameraviewarr)
     return cameraviewarr  
 
-
-
 ########################## Below we generate the poses for rendering #####################################
 # This is based on how renderer is implemented. 
 
 Numberofimages = 11  # Or just the number of images
-Focal_plane = 0       # Focal plane is set to the ground so it is zero.
+Focal_plane = 0      # Focal plane is set to the ground so it is zero.
 
 # ref_loc is the reference location or the poses of the images. The poses are the same for the dataset and therefore only the images have to be replaced.
 
@@ -116,11 +114,9 @@ for i in range(Numberofimages):
     camerapose = np.asarray(ViewMatrix.transpose(),dtype=np.float32)
     print(camerapose)
     site_poses.append(camerapose)  # site_poses is a list now containing all the poses of all the images in a certain format that is accecpted by the renderer.
-    
-    
+
 #############################Read the generated images from the simulator and store in a list ###############################################################
 
-import re
 
 numbers = re.compile(r'(\d+)')
 def numericalSort(value):
@@ -130,13 +126,9 @@ def numericalSort(value):
 
 imagelist = []
 
-import glob
-
-for img in sorted(glob.glob(r"Enter path to your images directory" + '/*.png'),key=numericalSort):      # Enter path to the images directory which should contain 11 images.
+for img in sorted(glob.glob(os.path.join(training_data_path, '*.png')), key = numericalSort):
     n= cv2.imread(img)
     imagelist.append(n)
-
-    
     
 aos.clearViews()   # Every time you call the renderer you should use this line to clear the previous views  
 for i in range(len(imagelist)):
@@ -145,5 +137,4 @@ aos.setDEMTransform([0,0,Focal_plane])
 
 proj_RGBimg = aos.render(pose_to_virtualcamera(site_poses[center_index]), render_fov)
 tmp_RGB = divide_by_alpha(proj_RGBimg)
-cv2.imwrite(os.path.join( Integral_Path, 'integral.png'), tmp_RGB)   # Final result. Check the integral result in the integrals folder.
-
+cv2.imwrite(os.path.join(Integral_Path, 'integral.png'), tmp_RGB)   # Final result. Check the integral result in the integrals folder.

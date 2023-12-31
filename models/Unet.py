@@ -141,7 +141,7 @@ class MiniUNet(nn.Module):
 
 # Debugging
 if __name__ == "__main__":
-    input_image = torch.rand((1, 36, 512, 512))  # Assuming 12 frames with 3 channels each
+    input_image = torch.rand((1, 12, 512, 512))  # Assuming 12 frames with 1 channels each
     num_frames = 12  # Assuming a focal stack with 12 frames
     model = MiniUNet(3, 10, num_frames)
     output = model(input_image)

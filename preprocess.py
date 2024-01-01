@@ -60,7 +60,7 @@ def process_images(batch_id, file_list, dst_dir):
                 new_name = filepath.replace(f"_{sample_id}_", f"_{new_sample_id}_")
                 dest_path = os.path.join(dst_dir, os.path.basename(new_name))
                 shutil.copy(filepath, dest_path)
-            generate_integral(batch_id, sample_id)
+            generate_integral(batch_id, new_sample_id)
 
     print(f"Excluded {excluded_count} samples from training.")
 

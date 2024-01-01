@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser()
 # Add argument for batch
 parser.add_argument("--batch", type=str, choices=["batch_20230912", "batch_20230919", "batch_20231027"], required=True, help="Batch to be processed")
 # Add optional limit for debugging
-parser.add_argument("--limit", type=int, required=False, default=None)
+parser.add_argument("--limit", type=int, required=False, default=None, help="Optional limit for debugging")
 # Parse arguments
 args = parser.parse_args()
 

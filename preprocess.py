@@ -4,6 +4,8 @@ import shutil
 import argparse
 from collections import defaultdict
 
+from aos_wrapper import generate_integral
+
 # Create ArgumentParser instance
 parser = argparse.ArgumentParser()
 # Add argument for batch
@@ -38,7 +40,7 @@ if args.limit is not None:
     print(f"Limiting output to {args.limit} samples.")
 
 
-def process_images(file_list, dst_dir):
+def process_images(batch_id, file_list, dst_dir):
     id_replace_map = {}
     unused_id = 0
     excluded_count = 0
@@ -58,6 +60,7 @@ def process_images(file_list, dst_dir):
                 new_name = filepath.replace(f"_{sample_id}_", f"_{new_sample_id}_")
                 dest_path = os.path.join(dst_dir, os.path.basename(new_name))
                 shutil.copy(filepath, dest_path)
+            generate_integral(batch_id, sample_id)
 
     print(f"Excluded {excluded_count} samples from training.")
 
@@ -85,4 +88,4 @@ for foldername in glob.glob(pattern, recursive=True):
 
 
 print("Processing...")
-process_images(batch_file_list, dst_dir)
+process_images(batch_id, batch_file_list, dst_dir)

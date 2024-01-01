@@ -4,8 +4,9 @@ from aos_wrapper import generate_integral
 
 class TestAOS(unittest.TestCase):
     def test_aos_integrator(self):
-        batch_index = 0
-        required_file = f"../data/train/{batch_index}_0_pose_0_thermal.png"
+        batch_index = 1
+        sample_index = 320
+        required_file = f"../data/train/{batch_index}_{sample_index}_pose_0_thermal.png"
 
         no_train_error_msg = f"Please ensure you have set up training data using the preprocess.py and that the file {required_file} exists."
         if not os.path.isdir("../data/train"):

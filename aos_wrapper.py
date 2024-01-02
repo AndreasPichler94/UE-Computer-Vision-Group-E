@@ -14,6 +14,9 @@ import LFR.python.pyaos as pyaos
 def generate_integral(arg):
     batch_and_sample_indexes, focal_planes, _dir_adjust = arg
 
+    if not batch_and_sample_indexes:
+        return
+
     source_dir = "./data/train"
 
     if _dir_adjust is not None:

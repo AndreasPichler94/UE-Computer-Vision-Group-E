@@ -70,11 +70,11 @@ def process_images(batch_id, file_list, dst_dir):
                 new_name = filepath.replace(f"_{sample_id}_", f"_{new_sample_id}_")
                 dest_path = os.path.join(dst_dir, os.path.basename(new_name))
                 shutil.copy(filepath, dest_path)
-            generate_integral(
-                batch_id,
-                new_sample_id,
-                focal_planes=[0, -0.2, -0.4, -0.6, -0.8, -1.0, -1.2, -1.6, -2.0, -2.4],
-            )
+
+    generate_integral(
+        [(batch_id, new_sample_id) for new_sample_id in id_replace_map.values()],
+        focal_planes=(0, -0.2, -0.4, -0.6, -0.8, -1.0, -1.2, -1.6, -2.0, -2.4),
+    )
 
     print(f"Excluded {excluded_count} samples from training.")
 

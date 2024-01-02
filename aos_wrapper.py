@@ -1,6 +1,7 @@
 ## Import libraries section ##
 import math
 import os
+import re
 
 import cv2
 import glm
@@ -10,7 +11,7 @@ import LFR.python.pyaos as pyaos
 
 ## path to where the results will be stored
 
-def generate_integral(batch_index, sample_index, focal_planes=None, _dir_adjust=None):
+def generate_integral(batch_and_sample_indexes, focal_planes=None, _dir_adjust=None):
 
     if focal_planes is None:
         focal_planes = []
@@ -156,8 +157,6 @@ def generate_integral(batch_index, sample_index, focal_planes=None, _dir_adjust=
 
     #############################Read the generated images from the simulator and store in a list ###############################################################
 
-    import re
-
     numbers = re.compile(r"(\d+)")
 
 
@@ -166,34 +165,35 @@ def generate_integral(batch_index, sample_index, focal_planes=None, _dir_adjust=
         parts[1::2] = map(int, parts[1::2])
         return parts
 
+    for (batch_index, sample_index) in batch_and_sample_indexes:
 
-    imagelist = []
+        imagelist = []
 
-    import glob
-    glob_pattern = f"./data/train/{batch_index}_{sample_index}_pose*.png"
+        import glob
+        glob_pattern = f"./data/train/{batch_index}_{sample_index}_pose*.png"
 
-    if _dir_adjust is not None:
-        glob_pattern = os.path.join(_dir_adjust, glob_pattern)
+        if _dir_adjust is not None:
+            glob_pattern = os.path.join(_dir_adjust, glob_pattern)
 
-    for img in sorted(
-        glob.glob(
-            glob_pattern
-        ),
-        key=numericalSort,
-    ):  # Enter path to the images directory which should contain 11 images.
-        n = cv2.imread(img)
-        imagelist.append(n)
+        for img in sorted(
+            glob.glob(
+                glob_pattern
+            ),
+            key=numericalSort,
+        ):  # Enter path to the images directory which should contain 11 images.
+            n = cv2.imread(img)
+            imagelist.append(n)
 
-    for focal_plane in focal_planes:
-        aos.clearViews()  # Every time you call the renderer you should use this line to clear the previous views
-        for i in range(len(imagelist)):
-            aos.addView(
-                imagelist[i], site_poses[i], "DEM BlobTrack"
-            )  # Here we are adding images to the renderer one by one.
-        aos.setDEMTransform([0, 0, focal_plane])
+        for focal_plane in focal_planes:
+            aos.clearViews()  # Every time you call the renderer you should use this line to clear the previous views
+            for i in range(len(imagelist)):
+                aos.addView(
+                    imagelist[i], site_poses[i], "DEM BlobTrack"
+                )  # Here we are adding images to the renderer one by one.
+            aos.setDEMTransform([0, 0, focal_plane])
 
-        proj_RGBimg = aos.render(pose_to_virtualcamera(site_poses[center_index]), render_fov)
-        tmp_RGB = divide_by_alpha(proj_RGBimg)
-        cv2.imwrite(
-            os.path.join(Integral_Path, f"{batch_index}_{sample_index}-aos_thermal-{focal_plane}.png"), tmp_RGB
-        )  # Final result. Check the integral result in the integrals folder.
+            proj_RGBimg = aos.render(pose_to_virtualcamera(site_poses[center_index]), render_fov)
+            tmp_RGB = divide_by_alpha(proj_RGBimg)
+            cv2.imwrite(
+                os.path.join(Integral_Path, f"{batch_index}_{sample_index}-aos_thermal-{focal_plane}.png"), tmp_RGB
+            )  # Final result. Check the integral result in the integrals folder.

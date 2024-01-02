@@ -18,7 +18,7 @@ class TestAOS(unittest.TestCase):
         if os.path.isfile(out_image):
             print("Deleting existing file.")
             os.remove(out_image)
-        generate_integral(0, 0, _dir_adjust="..")
+        generate_integral(0, 0, focal_planes=[], _dir_adjust="..")
 
         if not os.path.isfile(out_image):
             raise FileNotFoundError("Couldn't find AOS output file, something went wrong.")

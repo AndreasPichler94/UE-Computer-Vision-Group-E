@@ -1,148 +1,122 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+
 
 class DoubleConv(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
+    """(convolution => [BN] => ReLU) * 2"""
 
-        # Encoder - Double convolution
-        self.encoder = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+    def __init__(self, in_channels, out_channels, mid_channels=None):
+        super().__init__()
+        if not mid_channels:
+            mid_channels = out_channels
+        self.double_conv = nn.Sequential(
+            nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(mid_channels),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
 
     def forward(self, x):
-        return self.encoder(x)
+        return self.double_conv(x)
 
-class DownSample(nn.Module):
+
+class Down(nn.Module):
+    """Downscaling with maxpool then double conv"""
+
     def __init__(self, in_channels, out_channels):
         super().__init__()
-
-        # Use DoubleConv for the convolutional part
-        self.conv = DoubleConv(in_channels, out_channels)
-
-        # MaxPooling for downsampling
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.maxpool_conv = nn.Sequential(
+            nn.MaxPool2d(2),
+            DoubleConv(in_channels, out_channels)
+        )
 
     def forward(self, x):
-        # Apply convolution
-        down = self.conv(x)
+        return self.maxpool_conv(x)
 
-        # Apply MaxPooling
-        pooled = self.pool(down)
 
-        return down, pooled
+class Up(nn.Module):
+    """Upscaling then double conv"""
 
-class UpSample(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, bilinear=True):
         super().__init__()
 
-        # Transpose convolution for upsampling
-        self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
-
-        # Use DoubleConv for the convolutional part
-        self.conv = DoubleConv(in_channels, out_channels)
+        # if bilinear, use the normal convolutions to reduce the number of channels
+        if bilinear:
+            self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2)
+        else:
+            self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
+            self.conv = DoubleConv(in_channels, out_channels)
 
     def forward(self, x1, x2):
-        # Upsample
         x1 = self.up(x1)
+        # input is CHW
+        diffY = x2.size()[2] - x1.size()[2]
+        diffX = x2.size()[3] - x1.size()[3]
 
-        # Concatenate along the channel dimension
-        x = torch.cat([x1, x2], 1)
-
-        # Apply convolution
+        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
+                        diffY // 2, diffY - diffY // 2])
+        # if you have padding issues, see
+        # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
+        # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
+        x = torch.cat([x2, x1], dim=1)
         return self.conv(x)
 
+
+class OutConv(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(OutConv, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+
+    def forward(self, x):
+        return self.conv(x)
+
+
+
 class UNet(nn.Module):
-    def __init__(self, in_channels, num_classes, num_frames):
+    def __init__(self, n_channels, n_classes, bilinear=False):
         super(UNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear
 
-        self.num_frames = num_frames
-
-        # Implement downsampling
-        self.down_convolution_1 = DownSample(in_channels, 64)
-        self.down_convolution_2 = DownSample(64, 128)
-        self.down_convolution_3 = DownSample(128, 256)
-        self.down_convolution_4 = DownSample(256, 512)
-
-        # Implement bottleneck
-        self.bottleneck = DoubleConv(512, 1024)
-
-        # Implement upsampling
-        self.up_convolutional_1 = UpSample(1024, 512)
-        self.up_convolutional_2 = UpSample(512, 256)
-        self.up_convolutional_3 = UpSample(256, 128)
-        self.up_convolutional_4 = UpSample(128, 64)
-
-        # Return output 2D convolution
-        self.out = nn.Conv2d(in_channels=64, out_channels=num_classes, kernel_size=1)
+        self.inc = (DoubleConv(n_channels, 64))
+        self.down1 = (Down(64, 128))
+        self.down2 = (Down(128, 256))
+        self.down3 = (Down(256, 512))
+        factor = 2 if bilinear else 1
+        self.down4 = (Down(512, 1024 // factor))
+        self.up1 = (Up(1024, 512 // factor, bilinear))
+        self.up2 = (Up(512, 256 // factor, bilinear))
+        self.up3 = (Up(256, 128 // factor, bilinear))
+        self.up4 = (Up(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
 
     def forward(self, x):
-        # Downsampling
-        batch_size, channels, height, width = x.size()
-        stacked_frames = x.view(batch_size, self.num_frames, channels // self.num_frames, height, width)
-        stacked_frames = stacked_frames.permute(0, 2, 1, 3, 4).contiguous().view(-1, channels // self.num_frames, height, width)
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+        x = self.up1(x5, x4)
+        x = self.up2(x, x3)
+        x = self.up3(x, x2)
+        x = self.up4(x, x1)
+        logits = self.outc(x)
+        return logits
 
-        down_1, pooled_1 = self.down_convolution_1(stacked_frames)
-        down_2, pooled_2 = self.down_convolution_2(pooled_1)
-        down_3, pooled_3 = self.down_convolution_3(pooled_2)
-        down_4, pooled_4 = self.down_convolution_4(pooled_3)
-
-        # Bottleneck
-        bottleneck = self.bottleneck(pooled_4)
-
-        # Upsampling
-        up_1 = self.up_convolutional_1(bottleneck, down_4)
-        up_2 = self.up_convolutional_2(up_1, down_3)
-        up_3 = self.up_convolutional_3(up_2, down_2)
-        up_4 = self.up_convolutional_4(up_3, down_1)
-
-        # Output
-        output = self.out(up_4)
-        return output
-
-class MiniUNet(nn.Module):
-    def __init__(self, in_channels, num_classes, num_frames):
-        super(MiniUNet, self).__init__()
-
-        self.num_frames = num_frames
-
-        # Implement downsampling
-        self.down_convolution_1 = DownSample(in_channels, 64)
-
-        # Implement bottleneck
-        self.bottleneck = DoubleConv(64, 128)
-
-        # Implement upsampling
-        self.up_convolutional_1 = UpSample(128, 64)
-
-        # Return output 2D convolution
-        self.out = nn.Conv2d(in_channels=64, out_channels=num_classes, kernel_size=1)
-
-    def forward(self, x):
-        # Downsampling
-        batch_size, channels, height, width = x.size()
-        stacked_frames = x.view(batch_size, self.num_frames, channels // self.num_frames, height, width)
-        stacked_frames = stacked_frames.permute(0, 2, 1, 3, 4).contiguous().view(-1, channels // self.num_frames, height, width)
-
-        down_1, pooled_1 = self.down_convolution_1(stacked_frames)
-
-        # Bottleneck
-        bottleneck = self.bottleneck(pooled_1)
-
-        # Upsampling
-        up_1 = self.up_convolutional_1(bottleneck, down_1)
-
-        # Output
-        output = self.out(up_1)
-        return output
-
-# Debugging
-if __name__ == "__main__":
-    input_image = torch.rand((1, 12, 512, 512))  # Assuming 12 frames with 1 channels each
-    num_frames = 12  # Assuming a focal stack with 12 frames
-    model = MiniUNet(3, 10, num_frames)
-    output = model(input_image)
-    print(output.size())
+    def use_checkpointing(self):
+        self.inc = torch.utils.checkpoint(self.inc)
+        self.down1 = torch.utils.checkpoint(self.down1)
+        self.down2 = torch.utils.checkpoint(self.down2)
+        self.down3 = torch.utils.checkpoint(self.down3)
+        self.down4 = torch.utils.checkpoint(self.down4)
+        self.up1 = torch.utils.checkpoint(self.up1)
+        self.up2 = torch.utils.checkpoint(self.up2)
+        self.up3 = torch.utils.checkpoint(self.up3)
+        self.up4 = torch.utils.checkpoint(self.up4)
+        self.outc = torch.utils.checkpoint(self.outc)

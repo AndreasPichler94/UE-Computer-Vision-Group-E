@@ -10,7 +10,7 @@ import LFR.python.pyaos as pyaos
 
 ## path to where the results will be stored
 
-def generate_integral(batch_index, sample_index, focal_plane=0, _dir_adjust=None):
+def generate_integral(batch_index, sample_index, focal_planes=[], _dir_adjust=None):
 
     source_dir = "./data/train"
 
@@ -142,11 +142,11 @@ def generate_integral(batch_index, sample_index, focal_plane=0, _dir_adjust=None
             np.array([0.0, 0.0, 0.0]),
             np.array([ref_loc[0][i], ref_loc[1][i], -altitude_list[i]]),
         )
-        print("m", M)
+        # print("m", M)
         ViewMatrix = np.vstack((M, np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32)))
-        print(ViewMatrix)
+        # print(ViewMatrix)
         camerapose = np.asarray(ViewMatrix.transpose(), dtype=np.float32)
-        print(camerapose)
+        # print(camerapose)
         site_poses.append(
             camerapose
         )  # site_poses is a list now containing all the poses of all the images in a certain format that is accecpted by the renderer.
@@ -182,16 +182,16 @@ def generate_integral(batch_index, sample_index, focal_plane=0, _dir_adjust=None
         n = cv2.imread(img)
         imagelist.append(n)
 
+    for focal_plane in focal_planes:
+        aos.clearViews()  # Every time you call the renderer you should use this line to clear the previous views
+        for i in range(len(imagelist)):
+            aos.addView(
+                imagelist[i], site_poses[i], "DEM BlobTrack"
+            )  # Here we are adding images to the renderer one by one.
+        aos.setDEMTransform([0, 0, focal_plane])
 
-    aos.clearViews()  # Every time you call the renderer you should use this line to clear the previous views
-    for i in range(len(imagelist)):
-        aos.addView(
-            imagelist[i], site_poses[i], "DEM BlobTrack"
-        )  # Here we are adding images to the renderer one by one.
-    aos.setDEMTransform([0, 0, focal_plane])
-
-    proj_RGBimg = aos.render(pose_to_virtualcamera(site_poses[center_index]), render_fov)
-    tmp_RGB = divide_by_alpha(proj_RGBimg)
-    cv2.imwrite(
-        os.path.join(Integral_Path, f"{batch_index}_{sample_index}-aos_thermal-{focal_plane}.png"), tmp_RGB
-    )  # Final result. Check the integral result in the integrals folder.
+        proj_RGBimg = aos.render(pose_to_virtualcamera(site_poses[center_index]), render_fov)
+        tmp_RGB = divide_by_alpha(proj_RGBimg)
+        cv2.imwrite(
+            os.path.join(Integral_Path, f"{batch_index}_{sample_index}-aos_thermal-{focal_plane}.png"), tmp_RGB
+        )  # Final result. Check the integral result in the integrals folder.

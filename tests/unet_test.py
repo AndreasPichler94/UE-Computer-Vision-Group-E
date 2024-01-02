@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import sys
 sys.path.append("./models")
 
-from Unet import UNet
+from unet import UNet
 
  # Function to test the model
 def test_unet():

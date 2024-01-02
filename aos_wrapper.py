@@ -26,8 +26,6 @@ def generate_integral(batch_index, sample_index, focal_plane=0, _dir_adjust=None
     # Check if the directory already exists
     if not os.path.exists(Integral_Path):
         os.mkdir(Integral_Path)
-    else:
-        print(f"The directory '{Integral_Path}' already exists.")
 
 
     #############################Start the AOS Renderer###############################################################

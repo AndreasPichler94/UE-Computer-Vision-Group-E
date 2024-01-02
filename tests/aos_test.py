@@ -4,8 +4,8 @@ from aos_wrapper import generate_integral
 
 class TestAOS(unittest.TestCase):
     def test_aos_integrator(self):
-        batch_index = 1
-        sample_index = 320
+        batch_index = 0
+        sample_index = 0
         required_file = f"../data/train/{batch_index}_{sample_index}_pose_0_thermal.png"
 
         no_train_error_msg = f"Please ensure you have set up training data using the preprocess.py and that the file {required_file} exists."
@@ -18,7 +18,7 @@ class TestAOS(unittest.TestCase):
         if os.path.isfile(out_image):
             print("Deleting existing file.")
             os.remove(out_image)
-        generate_integral(0, 0, focal_planes=[], _dir_adjust="..")
+        generate_integral(([(0, 0)], ("0",), ".."))
 
         if not os.path.isfile(out_image):
             raise FileNotFoundError("Couldn't find AOS output file, something went wrong.")

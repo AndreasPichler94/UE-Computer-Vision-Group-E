@@ -90,7 +90,7 @@ def process_images(num_processes, batch_id, file_list, dst_dir):
     print(f"Launching up to {num_processes} processes.")
 
     # Create a pool of processes, and map the function to the iterable
-    with Pool() as p:
+    with Pool(processes=num_processes) as p:
         p.map(generate_integral, chunked_tasks)
 
     post_integral = print_timestamp(f"Integrals generated.")

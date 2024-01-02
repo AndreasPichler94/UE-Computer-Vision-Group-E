@@ -12,7 +12,7 @@ def check_gpu_availability():
         return False
 
 
-def train_deeplab(model, num_epochs=10):
+def train_unet(model, num_epochs=10):
     device = torch.device("cuda" if check_gpu_availability() else "cpu")
 
     train_loader = _get_dataloader(
@@ -67,6 +67,7 @@ def train_deeplab(model, num_epochs=10):
             outputs = model(inputs)
 
             print("Calculating loss")
+            #check index "out" unet tensor direkt?
             loss = model.criterion(outputs["out"], labels.squeeze(1).long())
 
             print("Backprop")
@@ -98,12 +99,12 @@ if __name__ == "__main__":
 
     import torch
 
-    from aos_deeplab import AosDeepLab
-    from train_deeplab import train_deeplab, check_gpu_availability
+    from unet import UNet
 
-    model = AosDeepLab()
+    model = UNet()
+    #
     print(f"GPU available: {check_gpu_availability()}")
 
-    trained_model = train_deeplab(model, num_epochs=10)
+    trained_model = train_unet(model, num_epochs=10)
 
     # torch.save(trained_model.state_dict(), "aosdeeplab_model.pth")

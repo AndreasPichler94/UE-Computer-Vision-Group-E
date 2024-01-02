@@ -145,7 +145,7 @@ def check_directories():
 
 
 if __name__ == "__main__":
-    training_data_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..')), 'data','train')
+    training_data_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..')), 'data','train')
 
     integral_path = check_directories()
     aos, render_fov = aos_renderer()

@@ -127,9 +127,9 @@ def cleanup_data(part_folder):
 
 if __name__ == "__main__":
     #TODO Unzip all the zipped batches into ./raw/data
-    raw_directory_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..')), 'data', 'raw')
-    training_data_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..')), 'data', 'train')
-    validation_data_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..')), 'data', 'test')
+    raw_directory_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..')), 'data', 'raw')
+    training_data_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..')), 'data', 'train')
+    validation_data_path = os.path.join(os.path.abspath(os.path.join(os.path.abspath(__file__), '..')), 'data', 'test')
     train_percentage = 0.8
 
     # Process Folders

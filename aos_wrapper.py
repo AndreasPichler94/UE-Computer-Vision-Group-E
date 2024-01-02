@@ -7,7 +7,10 @@ import cv2
 import glm
 import numpy as np
 
-import LFR.python.pyaos as pyaos
+import sys
+sys.path.append("./LFR/python")
+
+import pyaos.cpp as pyaos
 
 ## path to where the results will be stored
 

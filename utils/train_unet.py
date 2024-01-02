@@ -100,8 +100,7 @@ if __name__ == "__main__":
     import torch
 
     from unet import UNet
-
-    model = UNet()
+    model = UNet(10,1)
     #
     print(f"GPU available: {check_gpu_availability()}")
 

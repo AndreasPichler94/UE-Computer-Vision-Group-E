@@ -10,8 +10,10 @@ import LFR.python.pyaos as pyaos
 
 ## path to where the results will be stored
 
-def generate_integral(batch_index, sample_index, focal_planes=[], _dir_adjust=None):
+def generate_integral(batch_index, sample_index, focal_planes=None, _dir_adjust=None):
 
+    if focal_planes is None:
+        focal_planes = []
     source_dir = "./data/train"
 
     if _dir_adjust is not None:

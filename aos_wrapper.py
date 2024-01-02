@@ -11,10 +11,9 @@ import LFR.python.pyaos as pyaos
 
 ## path to where the results will be stored
 
-def generate_integral(batch_and_sample_indexes, focal_planes=None, _dir_adjust=None):
+def generate_integral(arg):
+    batch_and_sample_indexes, focal_planes, _dir_adjust = arg
 
-    if focal_planes is None:
-        focal_planes = []
     source_dir = "./data/train"
 
     if _dir_adjust is not None:
@@ -23,7 +22,6 @@ def generate_integral(batch_and_sample_indexes, focal_planes=None, _dir_adjust=N
     Download_Location = (
         source_dir  ## Enter path to the directory where you want to save the results.
     )
-    print(Download_Location)
     Integral_Path = source_dir  # Note that your results will be saved to this integrals folder.
 
     # Check if the directory already exists

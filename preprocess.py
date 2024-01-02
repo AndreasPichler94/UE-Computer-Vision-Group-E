@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import glob
 import shutil
@@ -66,10 +67,27 @@ def process_images(batch_id, file_list, dst_dir):
     pre_integral = print_timestamp("Files created.")
     print(f"Generating {len(id_replace_map)} samples with {len(focal_planes)} focal planes each...")
 
-    generate_integral(
-        [(batch_id, new_sample_id) for new_sample_id in id_replace_map.values()],
-        focal_planes=focal_planes,
-    )
+    def split_into_sublists(my_list, n):
+        sublist = []
+        size_of_each_part = len(my_list) // n
+        remainder = len(my_list) % n
+        iterator = iter(my_list)
+
+        for i in range(n):
+            sublist_length = size_of_each_part + (i < remainder)
+            sublist.append(list(next(iterator) for _ in range(sublist_length)))
+
+        return sublist
+
+    chunked_tasks = list(split_into_sublists(list(id_replace_map.values()), multiprocessing.cpu_count()))
+
+    chunked_tasks = [([(batch_id, new_sample_id) for new_sample_id in chunk], focal_planes, None) for chunk in chunked_tasks]
+
+    chunked_tasks = [c for c in chunked_tasks if len(c[0])]
+
+    # Create a pool of processes, and map the function to the iterable
+    with Pool() as p:
+        p.map(generate_integral, chunked_tasks)
 
     post_integral = print_timestamp(f"Integrals generated.")
 

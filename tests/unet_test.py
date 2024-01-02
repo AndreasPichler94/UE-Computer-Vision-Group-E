@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-#import sys
-#sys.path.append("..")
+import sys
+sys.path.append("./models")
 
-from models.unet import UNet
+from Unet import UNet
 
  # Function to test the model
 def test_unet():
@@ -12,7 +12,7 @@ def test_unet():
     torch.manual_seed(42)
 
     # Model parameters
-    n_channels = 12  # Number of input channels
+    n_channels = 10  # Number of input channels
     n_classes = 1   # Number of output channels
     input_size = (128, 128)  # Input image size
 

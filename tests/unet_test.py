@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.unet.py import Unet
+from models.unet import UNet
 
 
  # Function to test the model

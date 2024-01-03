@@ -71,7 +71,8 @@ def train_deeplab(model, num_epochs=10):
             print("Calculating loss")
 
             if model.model_name == "UNet":
-                rounded = torch.round(labels).squeeze(1).long()
+                rounding_threshold = 0.8 # round to 0 below this value
+                rounded = (labels > rounding_threshold).squeeze(1).long()
 
                 if ind % 100 == 0:
                     print("Showing network outputs...")

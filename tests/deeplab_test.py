@@ -3,7 +3,7 @@ import torch
 import sys
 
 sys.path.append("../models")
-from aos_deeplab import AosDeepLab
+from models.aos_deeplab import AosDeepLab
 
 
 class TestDeeplab(unittest.TestCase):

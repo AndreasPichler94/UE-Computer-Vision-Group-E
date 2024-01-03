@@ -5,6 +5,7 @@ from aos_loader import _get_dataloader
 from evaluate import evaluate_model
 sys.path.append("./models")
 from unet_2.unet_model import UNet, UNetSmall
+import matplotlib.pyplot as plt
 
 
 def check_gpu_availability():
@@ -59,7 +60,7 @@ def train_deeplab(model, num_epochs=10):
         running_loss = 0.0
         print(f"Number of samples {len(train_loader)}")
         print(f"Training epoch {epoch}")
-        for inputs, labels in train_loader:
+        for ind, (inputs, labels) in enumerate(train_loader):
             inputs, labels = inputs.to(device), labels.to(device)
 
             print("Calculating zero_grad")
@@ -72,6 +73,11 @@ def train_deeplab(model, num_epochs=10):
 
             if model.model_name == "UNet":
                 rounded = torch.round(labels).squeeze(1).long()
+
+                if ind % 100 == 0:
+                    print("Showing network outputs...")
+                    visualize_tensors(input_tensor=inputs[0][0], prediction_tensor=torch.argmax(outputs[0], dim=0, keepdim=True), target_tensor=rounded[0], ground_truth=labels[0])
+
                 loss = model.criterion(outputs, rounded)
             else:
                 loss = model.criterion(outputs["out"], labels.squeeze(1).long())
@@ -104,6 +110,42 @@ def train_deeplab(model, num_epochs=10):
 
     # evaluate_model(model, train_loader, torch.nn.CrossEntropyLoss())
 
+
+def visualize_tensors(input_tensor, prediction_tensor, target_tensor, ground_truth, cmap='hot'):
+    # Ensure the tensors are detached and moved to cpu
+    input_tensor = input_tensor.detach().cpu()
+    prediction_tensor = prediction_tensor.detach().cpu()
+    target_tensor = target_tensor.detach().cpu()
+    ground_truth = ground_truth.detach().cpu()
+
+    # Create a subplot with 3 columns for the 3 images
+    fig, axes = plt.subplots(nrows=1, ncols=4, figsize=(20, 5))
+
+    # Plot input_tensor
+    axes[0].imshow(input_tensor.squeeze(), cmap=cmap)
+    axes[0].set_title("input")
+
+    # Plot prediction_tensor
+    axes[1].imshow(prediction_tensor.squeeze(), cmap=cmap)
+    axes[1].set_title("prediction")
+
+    # Plot target_tensor
+    axes[2].imshow(target_tensor.squeeze(), cmap=cmap)
+    axes[2].set_title("target")
+
+    # Plot ground_truth
+    axes[3].imshow(ground_truth.squeeze(), cmap=cmap)
+    axes[3].set_title("ground truth")
+
+    # Display the plot
+    plt.tight_layout()
+    plt.show()
+
+
+# Create some random data for example purpose
+input_tensor = torch.rand((1, 512, 512))
+prediction_tensor = torch.rand((1, 512, 512))
+target_tensor = torch.rand((1, 512, 512))
 
 if __name__ == "__main__":
     import sys

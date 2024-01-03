@@ -3,7 +3,8 @@ import torch
 
 from aos_loader import _get_dataloader
 from evaluate import evaluate_model
-from models.unet_2.unet_model import UNet, UNetSmall
+sys.path.append("./models")
+from unet_2.unet_model import UNet, UNetSmall
 
 
 def check_gpu_availability():
@@ -90,7 +91,7 @@ def train_deeplab(model, num_epochs=10):
 
                 outputs = model(inputs)
 
-                if model.model_name == "UNet":
+                if model.model_name == "UNet" or model.model_name == "Deeplab":
                     rounded = torch.round(labels).squeeze(1).long()
                     loss = model.criterion(outputs, rounded)
                 else:
@@ -112,10 +113,10 @@ if __name__ == "__main__":
 
     import torch
 
-    from models.aos_deeplab import AosDeepLab
+    from aos_deeplab import AosDeepLab
 
-    model = AosDeepLab() # FIXME
-    model = UNetSmall(10, 2)
+    model = AosDeepLab(10, 2)
+    # model = UNetSmall(10, 2)
     print(f"GPU available: {check_gpu_availability()}")
 
     trained_model = train_deeplab(model, num_epochs=10)

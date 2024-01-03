@@ -3,6 +3,7 @@ import torch
 
 from aos_loader import _get_dataloader
 from evaluate import evaluate_model
+from models.unet_2.unet_model import UNet, UNetSmall
 
 
 def check_gpu_availability():
@@ -67,7 +68,12 @@ def train_deeplab(model, num_epochs=10):
             outputs = model(inputs)
 
             print("Calculating loss")
-            loss = model.criterion(outputs["out"], labels.squeeze(1).long())
+
+            if model.model_name == "UNet":
+                rounded = torch.round(labels).squeeze(1).long()
+                loss = model.criterion(outputs, rounded)
+            else:
+                loss = model.criterion(outputs["out"], labels.squeeze(1).long())
 
             print("Backprop")
             loss.backward()
@@ -80,14 +86,22 @@ def train_deeplab(model, num_epochs=10):
         with torch.no_grad():
             valid_loss = 0.0
             for inputs, labels in test_loader:
+                inputs, labels = inputs.to(device), labels.to(device)
+
                 outputs = model(inputs)
-                loss = model.criterion(outputs["out"], labels.squeeze(1).long())
+
+                if model.model_name == "UNet":
+                    rounded = torch.round(labels).squeeze(1).long()
+                    loss = model.criterion(outputs, rounded)
+                else:
+                    loss = model.criterion(outputs["out"], labels.squeeze(1).long())
+
                 valid_loss += loss.item()
             print(f"Validation Loss: {valid_loss/len(test_loader)}")
 
         # torch.save(model.state_dict(), "aosdeeplab_model.pth")
 
-    evaluate_model(model, train_loader, torch.nn.CrossEntropyLoss())
+    # evaluate_model(model, train_loader, torch.nn.CrossEntropyLoss())
 
 
 if __name__ == "__main__":
@@ -98,10 +112,10 @@ if __name__ == "__main__":
 
     import torch
 
-    from aos_deeplab import AosDeepLab
-    from train_deeplab import train_deeplab, check_gpu_availability
+    from models.aos_deeplab import AosDeepLab
 
-    model = AosDeepLab()
+    model = AosDeepLab() # FIXME
+    model = UNetSmall(10, 2)
     print(f"GPU available: {check_gpu_availability()}")
 
     trained_model = train_deeplab(model, num_epochs=10)

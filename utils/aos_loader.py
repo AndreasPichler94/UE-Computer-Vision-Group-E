@@ -39,6 +39,7 @@ class AosDataset(Dataset):
         self.focal_heights = focal_heights
         all_imgs = glob.glob(os.path.join(main_dir, '*.png'))
         self.index_map = get_index_map(all_imgs)
+        pass
 
     def __len__(self):
         return len(self.index_map)

@@ -5,6 +5,9 @@ import torchvision
 class AosDeepLab(torch.nn.Module):
     def __init__(self):
         super(AosDeepLab, self).__init__()
+
+        self.model_name = "Deeplab"
+
         self.deeplab = torchvision.models.segmentation.deeplabv3_resnet101(
             pretrained=True,
         )

@@ -6,6 +6,8 @@ import argparse
 import time
 from collections import defaultdict
 from multiprocessing import Pool
+import psutil
+
 
 from aos_wrapper import generate_integral
 
@@ -40,7 +42,7 @@ def process_file(args):
             shutil.copy(filepath, dest_path)
 
 
-def process_images(batch_id, file_list, dst_dir):
+def process_images(num_processes, batch_id, file_list, dst_dir):
     id_replace_map = {}
     unused_id = 0
     excluded_count = 0
@@ -79,14 +81,16 @@ def process_images(batch_id, file_list, dst_dir):
 
         return sublist
 
-    chunked_tasks = list(split_into_sublists(list(id_replace_map.values()), multiprocessing.cpu_count()))
+    chunked_tasks = list(split_into_sublists(list(id_replace_map.values()), num_processes))
 
     chunked_tasks = [([(batch_id, new_sample_id) for new_sample_id in chunk], focal_planes, None) for chunk in chunked_tasks]
 
     chunked_tasks = [c for c in chunked_tasks if len(c[0])]
 
+    print(f"Launching up to {num_processes} processes.")
+
     # Create a pool of processes, and map the function to the iterable
-    with Pool() as p:
+    with Pool(processes=num_processes) as p:
         p.map(generate_integral, chunked_tasks)
 
     post_integral = print_timestamp(f"Integrals generated.")
@@ -162,7 +166,7 @@ def main():
                     batch_file_list[sample_id].append(os.path.join(dir_path, file_name))
 
     print_timestamp("Processing...")
-    process_images(batch_id, batch_file_list, dst_dir)
+    process_images(psutil.cpu_count(logical=False) - 1, batch_id, batch_file_list, dst_dir)
 
 
 if __name__ == "__main__":

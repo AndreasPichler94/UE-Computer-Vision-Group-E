@@ -7,7 +7,7 @@ from .unet_parts import *
 Taken from https://github.com/milesial/Pytorch-UNet/tree/master
 """
 class UNetSmall(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
+    def __init__(self, n_channels, n_classes, bilinear=False, pixel_out=True):
         super(UNetSmall, self).__init__()
         self.model_name = "UNet"
 
@@ -25,10 +25,15 @@ class UNetSmall(nn.Module):
         self.up2 = (Up(128, 64 // factor, bilinear))
         self.up3 = (Up(64, 32 // factor, bilinear))
         self.up4 = (Up(32, 16, bilinear))
-        self.outc = (OutConv(16, n_classes))
+        self.outc = (OutConv(16, 1 if pixel_out else n_classes))
+        self.pixel_out = pixel_out
+        if pixel_out:
+            self.outs = nn.Sigmoid()
+            self.criterion = torch.nn.MSELoss()
+        else:
+            self.criterion = torch.nn.CrossEntropyLoss()
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
-        self.criterion = torch.nn.CrossEntropyLoss()
 
     def forward(self, x):
         x1 = self.inc(x)
@@ -41,6 +46,8 @@ class UNetSmall(nn.Module):
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         logits = self.outc(x)
+        if self.pixel_out:
+            return self.outs(logits)
         return logits
 
     def use_checkpointing(self):

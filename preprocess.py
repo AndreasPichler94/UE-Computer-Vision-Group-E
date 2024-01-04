@@ -119,8 +119,23 @@ def main():
         default=None,
         help="Optional limit for debugging",
     )
+
+    parser.add_argument(
+        "--processes",
+        type=int,
+        required=False,
+        default=psutil.cpu_count(logical=False) - 1,
+        help="Number of worker processes to start"
+    )
     # Parse arguments
     args = parser.parse_args()
+
+    # Get the current process
+    process = psutil.Process(os.getpid())
+
+    # Set the priority of the process. Note that 'high' priority corresponds
+    # to 'ABOVE_NORMAL_PRIORITY_CLASS' in windows, not 'HIGH_PRIORITY_CLASS'.
+    process.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS)
 
     # Map batches to identifier
     batch_id_map = {"batch_20230912": 0, "batch_20230919": 1, "batch_20231027": 2}
@@ -166,7 +181,7 @@ def main():
                     batch_file_list[sample_id].append(os.path.join(dir_path, file_name))
 
     print_timestamp("Processing...")
-    process_images(psutil.cpu_count(logical=False) - 1, batch_id, batch_file_list, dst_dir)
+    process_images(args.processes, batch_id, batch_file_list, dst_dir)
 
 
 if __name__ == "__main__":

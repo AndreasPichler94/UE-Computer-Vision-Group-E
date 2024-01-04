@@ -1,6 +1,7 @@
 import torch
 import pickle
 import os
+import sys
 from datetime import datetime
 
 
@@ -8,12 +9,11 @@ def get_checkpoint(model, optimizer, checkpoint_dir="./checkpoints"):
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
-    checkpoints = [f for f in os.listdir(checkpoint_dir) if f.startswith('checkpoint_') and f.endswith('.pth')]
+    checkpoints = [os.path.join(checkpoint_dir, f) for f in os.listdir(checkpoint_dir) if f.startswith('checkpoint_') and f.endswith('.pth')]
 
     if checkpoints:
         latest_checkpoint = max(checkpoints, key=os.path.getctime)
-        checkpoint_path = os.path.join(checkpoint_dir, latest_checkpoint)
-        checkpoint = torch.load(checkpoint_path)
+        checkpoint = torch.load(latest_checkpoint)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         current_index = checkpoint['current_index']

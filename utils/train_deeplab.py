@@ -8,6 +8,8 @@ from unet_2.unet_model import UNet, UNetSmall
 sys.path.append(".")
 from checkpoint import save_checkpoint, get_checkpoint
 import matplotlib.pyplot as plt
+from torch.utils.tensorboard import SummaryWriter
+
 
 
 def check_gpu_availability():
@@ -18,6 +20,7 @@ def check_gpu_availability():
 
 
 def train_deeplab(model, num_epochs=10, current_index=0, current_epoch=0):
+    writer = SummaryWriter(f'trainlogs/deeplab_training_{num_epochs}_epochs')
     device = torch.device("cuda" if check_gpu_availability() else "cpu")
 
     train_loader = _get_dataloader(
@@ -107,6 +110,9 @@ def train_deeplab(model, num_epochs=10, current_index=0, current_epoch=0):
             if ind % 1000 == 0:
                 print(f"Iteration {ind}, Loss: {running_loss/len(train_loader)}")
                 save_checkpoint(model, model.optimizer, ind, epoch, checkpoint_dir='./checkpoints')
+                mean_iou = calculate_mean_iou(outputs["out"], labels)
+                writer.add_scalar('Loss/train', running_loss/(ind + 1), epoch * len(train_loader) + ind)
+                writer.add_scalar('Mean IoU/train', mean_iou, epoch * len(train_loader) + ind)
 
         print(f"Epoch {epoch}, Loss: {running_loss/len(train_loader)}")
 
@@ -127,7 +133,7 @@ def train_deeplab(model, num_epochs=10, current_index=0, current_epoch=0):
             print(f"Validation Loss: {valid_loss/len(test_loader)}")
 
     # evaluate_model(model, train_loader, torch.nn.CrossEntropyLoss())
-
+    writer.close()
 
 def visualize_tensors(ind, input_tensor, prediction_tensor, target_tensor, ground_truth, cmap='gray'):
     # Ensure the tensors are detached and moved to cpu
@@ -161,6 +167,22 @@ def visualize_tensors(ind, input_tensor, prediction_tensor, target_tensor, groun
     plt.savefig(f"visualization_frame{ind}.png")
 
 
+def calculate_mean_iou(preds, labels, smooth=1e-6):
+    preds = torch.argmax(preds, dim=1)
+    num_classes = preds.shape[1]
+    labels = labels.squeeze(1)
+
+    mean_iou = 0.0
+    for cls in range(num_classes): 
+        pred_inds = (preds == cls)
+        target_inds = (labels == cls)
+        intersection = (pred_inds[target_inds]).long().sum().item()
+        total = (pred_inds.long().sum().item() + target_inds.long().sum().item() - intersection)
+        iou = (intersection + smooth) / (total + smooth)
+        mean_iou += iou
+
+    return mean_iou / num_classes
+
 # Create some random data for example purpose
 input_tensor = torch.rand((1, 512, 512))
 prediction_tensor = torch.rand((1, 512, 512))
@@ -182,6 +204,6 @@ if __name__ == "__main__":
 
     iteration, epoch = get_checkpoint(model, model.optimizer)
 
-    trained_model = train_deeplab(model, num_epochs=10, current_epoch=epoch, current_index=iteration)
+    trained_model = train_deeplab(model, num_epochs=50, current_epoch=epoch, current_index=iteration)
 
     # torch.save(trained_model.state_dict(), "aosdeeplab_model.pth")

@@ -20,42 +20,20 @@ def check_gpu_availability():
         return False
 
 
-def train_deeplab(model, num_epochs=10, current_index=0, current_epoch=0):
+def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_epoch=0):
     writer = SummaryWriter(f'trainlogs/deeplab_training_{num_epochs}_epochs')
     device = torch.device("cuda" if check_gpu_availability() else "cpu")
 
     batch_size = 15
     train_loader = _get_dataloader(
         "./data/train/",
-        focal_heights=(
-            "0",
-            "-0.2",
-            "-0.4",
-            "-0.6",
-            "-0.8",
-            "-1.0",
-            "-1.2",
-            "-1.6",
-            "-2.0",
-            "-2.4",
-        ),
+        focal_heights=focal_heights,
         image_resolution=(512, 512),
         batch_size=batch_size,
     )
     test_loader = _get_dataloader(
         "./data/test/",
-        focal_heights=(
-            "0",
-            "-0.2",
-            "-0.4",
-            "-0.6",
-            "-0.8",
-            "-1.0",
-            "-1.2",
-            "-1.6",
-            "-2.0",
-            "-2.4",
-        ),
+        focal_heights=focal_heights,
         image_resolution=(512, 512),
         batch_size=batch_size,
     )
@@ -97,9 +75,8 @@ def train_deeplab(model, num_epochs=10, current_index=0, current_epoch=0):
 
                 if (ind - 5) % 100 == 0:
                     print(f"Showing network outputs... Loss: {running_loss / (ind + 1)}")
-                    visualize_tensors(input_tensor=inputs[0][0],
+                    visualize_tensors(ind, input_tensor=inputs[0][0],
                                       prediction_tensor=torch.softmax(outputs[0], 0)[1, :, :],
-                                      # torch.argmax(outputs[0], dim=0, keepdim=True),
                                       target_tensor=target_tensor, ground_truth=labels[0])
             elif model.model_name == "Deeplab":
                 if ind % 100 == 0:
@@ -111,7 +88,7 @@ def train_deeplab(model, num_epochs=10, current_index=0, current_epoch=0):
 
                 loss = model.criterion(outputs["out"], labels.squeeze(1).long())
             else:
-                loss = model.criterion(outputs["out"], rounded)
+                raise NotImplementedError("Only UNet and Deeplab implemented")
 
             loss.backward()
             model.optimizer.step()
@@ -210,12 +187,25 @@ if __name__ == "__main__":
 
     from aos_deeplab import AosDeepLab
 
-    model = AosDeepLab(10, 2)
-    # model = UNetSmall(10, 2, pixel_out=False)
+    focal_heights = (
+        "0",
+        "-0.2",
+        "-0.4",
+        "-0.6",
+        "-0.8",
+        "-1.0",
+        "-1.2",
+        "-1.6",
+        "-2.0",
+        "-2.4",
+    )
+
+    model = AosDeepLab(len(focal_heights), 2)
+    # model = UNetSmall(len(focal_heights), 2, pixel_out=False)
     print(f"GPU available: {check_gpu_availability()}")
 
     iteration, epoch = get_checkpoint(model, model.optimizer)
 
-    trained_model = train_deeplab(model, num_epochs=50, current_epoch=epoch, current_index=iteration)
+    trained_model = train_deeplab(model, focal_heights,  num_epochs=50, current_epoch=epoch, current_index=iteration)
 
     # torch.save(trained_model.state_dict(), "aosdeeplab_model.pth")

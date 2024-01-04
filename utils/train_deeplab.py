@@ -5,7 +5,11 @@ from aos_loader import _get_dataloader
 from evaluate import evaluate_model
 sys.path.append("./models")
 from unet_2.unet_model import UNet, UNetSmall
+sys.path.append(".")
+from checkpoint import save_checkpoint, get_checkpoint
 import matplotlib.pyplot as plt
+from torch.utils.tensorboard import SummaryWriter
+
 from tqdm import tqdm
 
 
@@ -16,10 +20,11 @@ def check_gpu_availability():
         return False
 
 
-def train_deeplab(model, num_epochs=10):
+def train_deeplab(model, num_epochs=10, current_index=0, current_epoch=0):
+    writer = SummaryWriter(f'trainlogs/deeplab_training_{num_epochs}_epochs')
     device = torch.device("cuda" if check_gpu_availability() else "cpu")
 
-    batch_size = 5
+    batch_size = 15
     train_loader = _get_dataloader(
         "./data/train/",
         focal_heights=(
@@ -56,10 +61,13 @@ def train_deeplab(model, num_epochs=10):
     )
 
     model.to(device)
+    for state in model.optimizer.state.values():
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.to(device)
 
     rounding_threshold = 0.8  # round to 0 below this value
-
-    for epoch in range(num_epochs):
+    for epoch in range(current_epoch, num_epochs):
         model.train()
         running_loss = 0.0
         print(f"Number of samples {len(train_loader)}")
@@ -67,11 +75,18 @@ def train_deeplab(model, num_epochs=10):
         for ind, (inputs, labels) in tqdm(enumerate(train_loader)):
             inputs, labels = inputs.to(device), labels.to(device)
 
+            if model.model_name == "Deeplab":
+                threshold = 0.7843
+                labels = torch.where(labels > threshold,
+                                     torch.tensor(1.0, device=labels.device, dtype=torch.long),
+                                     torch.tensor(0.0, device=labels.device, dtype=torch.long))
+
             model.optimizer.zero_grad()
 
             outputs = model(inputs)
 
             if model.model_name == "UNet":
+
                 if model.pixel_out:
                     loss = model.criterion(outputs, labels)
                     target_tensor = None
@@ -79,19 +94,36 @@ def train_deeplab(model, num_epochs=10):
                     rounded = (labels > rounding_threshold).squeeze(1).long()
                     loss = model.criterion(outputs, rounded)
                     target_tensor = rounded[0]
-            else:
-                loss = model.criterion(outputs["out"], labels.squeeze(1).long())
-                target_tensor = None
 
-            if (ind - 5) % 100 == 0:
-                print(f"Showing network outputs... Loss: {running_loss / (ind + 1)}")
-                visualize_tensors(input_tensor=inputs[0][0],
-                                  prediction_tensor=torch.softmax(outputs[0], 0)[1, :, :],  # torch.argmax(outputs[0], dim=0, keepdim=True),
-                                  target_tensor=target_tensor, ground_truth=labels[0])
+                if (ind - 5) % 100 == 0:
+                    print(f"Showing network outputs... Loss: {running_loss / (ind + 1)}")
+                    visualize_tensors(input_tensor=inputs[0][0],
+                                      prediction_tensor=torch.softmax(outputs[0], 0)[1, :, :],
+                                      # torch.argmax(outputs[0], dim=0, keepdim=True),
+                                      target_tensor=target_tensor, ground_truth=labels[0])
+            elif model.model_name == "Deeplab":
+                if ind % 100 == 0:
+                    # rounded = torch.where(labels >= 200, torch.tensor(1, device=labels.device), torch.tensor(0, device=labels.device))
+                    print("Showing network outputs...")
+                    visualize_tensors(ind, input_tensor=inputs[0][0],
+                                      prediction_tensor=torch.argmax(outputs["out"][0], dim=0, keepdim=True),
+                                      target_tensor=labels[0], ground_truth=labels[0])
+
+                loss = model.criterion(outputs["out"], labels.squeeze(1).long())
+            else:
+                loss = model.criterion(outputs["out"], rounded)
+
             loss.backward()
             model.optimizer.step()
 
             running_loss += loss.item()
+
+            if ind % 1000 == 0:
+                print(f"Iteration {ind}, Loss: {running_loss/len(train_loader)}")
+                save_checkpoint(model, model.optimizer, ind, epoch, checkpoint_dir='./checkpoints')
+                mean_iou = calculate_mean_iou(outputs["out"], labels)
+                writer.add_scalar('Loss/train', running_loss/(ind + 1), epoch * len(train_loader) + ind)
+                writer.add_scalar('Mean IoU/train', mean_iou, epoch * len(train_loader) + ind)
 
         print(f"Epoch {epoch}, Loss: {running_loss/len(train_loader)}")
 
@@ -102,7 +134,7 @@ def train_deeplab(model, num_epochs=10):
 
                 outputs = model(inputs)
 
-                if model.model_name == "UNet" or model.model_name == "Deeplab":
+                if model.model_name == "UNet":
                     rounded = (labels > rounding_threshold).squeeze(1).long()
                     loss = model.criterion(outputs, rounded)
                 else:
@@ -111,12 +143,10 @@ def train_deeplab(model, num_epochs=10):
                 valid_loss += loss.item()
             print(f"Validation Loss: {valid_loss/len(test_loader)}")
 
-        # torch.save(model.state_dict(), "aosdeeplab_model.pth")
-
     # evaluate_model(model, train_loader, torch.nn.CrossEntropyLoss())
+    writer.close()
 
-
-def visualize_tensors(input_tensor, prediction_tensor, target_tensor, ground_truth, cmap='hot'):
+def visualize_tensors(ind, input_tensor, prediction_tensor, target_tensor, ground_truth, cmap='gray'):
     # Ensure the tensors are detached and moved to cpu
     input_tensor = input_tensor.detach().cpu()
     prediction_tensor = prediction_tensor.detach().cpu()
@@ -145,8 +175,25 @@ def visualize_tensors(input_tensor, prediction_tensor, target_tensor, ground_tru
 
     # Display the plot
     plt.tight_layout()
-    plt.show()
+    # plt.show()
+    plt.savefig(f"visualization_frame{ind}.png")
 
+
+def calculate_mean_iou(preds, labels, smooth=1e-6):
+    preds = torch.argmax(preds, dim=1)
+    num_classes = preds.shape[1]
+    labels = labels.squeeze(1)
+
+    mean_iou = 0.0
+    for cls in range(num_classes):
+        pred_inds = (preds == cls)
+        target_inds = (labels == cls)
+        intersection = (pred_inds[target_inds]).long().sum().item()
+        total = (pred_inds.long().sum().item() + target_inds.long().sum().item() - intersection)
+        iou = (intersection + smooth) / (total + smooth)
+        mean_iou += iou
+
+    return mean_iou / num_classes
 
 # Create some random data for example purpose
 input_tensor = torch.rand((1, 512, 512))
@@ -167,6 +214,8 @@ if __name__ == "__main__":
     # model = UNetSmall(10, 2, pixel_out=False)
     print(f"GPU available: {check_gpu_availability()}")
 
-    trained_model = train_deeplab(model, num_epochs=10)
+    iteration, epoch = get_checkpoint(model, model.optimizer)
+
+    trained_model = train_deeplab(model, num_epochs=50, current_epoch=epoch, current_index=iteration)
 
     # torch.save(trained_model.state_dict(), "aosdeeplab_model.pth")

@@ -167,7 +167,11 @@ def generate_integral(arg):
         parts[1::2] = map(int, parts[1::2])
         return parts
 
-    for (batch_index, sample_index) in batch_and_sample_indexes:
+
+    for ind, (batch_index, sample_index) in enumerate(batch_and_sample_indexes):
+
+        if ind % (len(batch_and_sample_indexes) // 100) == 0:
+            print(f"Process {os.getpid()} reached {int(100 * ind / len(batch_and_sample_indexes))}%")
 
         imagelist = []
 
@@ -199,3 +203,7 @@ def generate_integral(arg):
             cv2.imwrite(
                 os.path.join(Integral_Path, f"{batch_index}_{sample_index}-aos_thermal-{focal_plane}.png"), tmp_RGB
             )  # Final result. Check the integral result in the integrals folder.
+
+        for img in glob.glob(glob_pattern):
+            # Enter path to the images directory which should contain 11 images.
+            os.remove(img)

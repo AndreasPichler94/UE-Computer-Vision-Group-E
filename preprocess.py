@@ -37,9 +37,16 @@ def process_file(args):
     new_sample_id = id_replace_map.get(sample_id)
     if new_sample_id is not None:
         for filepath in files:
-            new_name = filepath.replace(f"_{sample_id}_", f"_{new_sample_id}_")
-            dest_path = os.path.join(dst_dir, os.path.basename(new_name))
-            shutil.copy(filepath, dest_path)
+            try:
+                new_name = filepath.replace(f"_{sample_id}_", f"_{new_sample_id}_")
+                dest_path = os.path.join(dst_dir, os.path.basename(new_name))
+                shutil.copy(filepath, dest_path)
+            except OSError as e:
+                print(f"Got OSError: {e}, trying again for file: {filepath}")
+                time.sleep(5)
+                new_name = filepath.replace(f"_{sample_id}_", f"_{new_sample_id}_")
+                dest_path = os.path.join(dst_dir, os.path.basename(new_name))
+                shutil.copy(filepath, dest_path)
 
 
 def process_images(num_processes, batch_id, file_list, dst_dir):

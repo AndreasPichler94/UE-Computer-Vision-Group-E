@@ -67,16 +67,18 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
 
                 if model.pixel_out:
                     loss = model.criterion(outputs, labels)
+                    prediction_tensor = outputs[0]
                     target_tensor = None
                 else:
                     rounded = (labels > rounding_threshold).squeeze(1).long()
                     loss = model.criterion(outputs, rounded)
+                    prediction_tensor = torch.softmax(outputs[0], 0)[1, :, :]
                     target_tensor = rounded[0]
 
-                if (ind - 5) % 100 == 0:
+                if (ind - 5) % 10 == 0:
                     print(f"Showing network outputs... Loss: {running_loss / (ind + 1)}")
                     visualize_tensors(ind, input_tensor=inputs[0][0],
-                                      prediction_tensor=torch.softmax(outputs[0], 0)[1, :, :],
+                                      prediction_tensor=prediction_tensor,
                                       target_tensor=target_tensor, ground_truth=labels[0])
             elif model.model_name == "Deeplab":
                 if ind % 100 == 0:

@@ -98,14 +98,15 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
             if ind % 1000 == 0:
                 print(f"Iteration {ind}, Loss: {running_loss/len(train_loader)}")
                 save_checkpoint(model, model.optimizer, ind, epoch, checkpoint_dir='./checkpoints')
-                mean_iou = calculate_mean_iou(outputs["out"], labels)
                 writer.add_scalar('Loss/train', running_loss/(ind + 1), epoch * len(train_loader) + ind)
-                writer.add_scalar('Mean IoU/train', mean_iou, epoch * len(train_loader) + ind)
 
         print(f"Epoch {epoch}, Loss: {running_loss/len(train_loader)}")
 
-        with torch.no_grad():
-            valid_loss = 0.0
+        model.eval()
+        valid_loss = 0.0
+        total_iou = 0.0
+        total_batches = 0
+        with torch.no_grad():   
             for inputs, labels in test_loader:
                 inputs, labels = inputs.to(device), labels.to(device)
 
@@ -118,7 +119,18 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
                     loss = model.criterion(outputs["out"], labels.squeeze(1).long())
 
                 valid_loss += loss.item()
-            print(f"Validation Loss: {valid_loss/len(test_loader)}")
+
+                preds = outputs["out"] if model.model_name != "UNet" else outputs
+                mean_iou = calculate_mean_iou(preds, labels.squeeze(1))
+                total_iou += mean_iou
+                total_batches += 1
+            
+            avg_valid_loss = valid_loss / total_batches
+            avg_valid_iou = total_iou / total_batches
+            print(f"Validation Loss: {avg_valid_loss}")
+            print(f"Validation Mean IoU: {avg_valid_iou}")
+            writer.add_scalar('Loss/validation', avg_valid_loss, epoch)
+            writer.add_scalar('Mean IoU/validation', avg_valid_iou, epoch)
 
     # evaluate_model(model, train_loader, torch.nn.CrossEntropyLoss())
     writer.close()
@@ -160,9 +172,9 @@ def calculate_mean_iou(preds, labels, smooth=1e-6):
     preds = torch.argmax(preds, dim=1)
     num_classes = preds.shape[1]
     labels = labels.squeeze(1)
-
+    print(f"num_classes: {num_classes}")
     mean_iou = 0.0
-    for cls in range(num_classes):
+    for cls in range(1, num_classes): 
         pred_inds = (preds == cls)
         target_inds = (labels == cls)
         intersection = (pred_inds[target_inds]).long().sum().item()

@@ -95,11 +95,10 @@ if __name__ == "__main__":
     import sys
 
     sys.path.append("./models")
+    from unet import UNet
+
     sys.path.append("./utils")
 
-    import torch
-
-    from unet import UNet
     model = UNet(10,1)
     #
     print(f"GPU available: {check_gpu_availability()}")

@@ -171,6 +171,7 @@ def visualize_tensors(filename, epoch, ind, input_tensor, prediction_tensor, tar
     plt.tight_layout()
     # plt.show()
     plt.savefig(f"{filename}_{epoch}_{ind}.png")
+    plt.close('all')
 
 
 def calculate_mean_iou(preds, labels, smooth=1e-6):
@@ -220,12 +221,12 @@ if __name__ == "__main__":
         "-2.4",
     )
 
-    #model = AosDeepLab(len(focal_heights), 2)
-    model = UNetSmall(len(focal_heights), 2, pixel_out=False)
+    model = AosDeepLab(len(focal_heights), 2)
+    # model = UNetSmall(len(focal_heights), 2, pixel_out=False)
     print(f"GPU available: {check_gpu_availability()}")
 
     iteration, epoch = get_checkpoint(model, model.optimizer)
 
-    trained_model = train_deeplab(model, focal_heights,  num_epochs=30, current_epoch=epoch, current_index=iteration)
+    trained_model = train_deeplab(model, focal_heights,  num_epochs=100, current_epoch=epoch, current_index=iteration)
 
     torch.save(trained_model.state_dict(), "UnetSmall_model_30epochs.pth")

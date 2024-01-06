@@ -31,3 +31,4 @@ trainlogs/deeplab_training_50_epochs/events.out.tfevents.1704467938.DESKTOP-ELG2
 trainlogs/deeplab_training_50_epochs/events.out.tfevents.1704469285.DESKTOP-ELG2GVD.19932.0
 trainlogs/deeplab_training_50_epochs/events.out.tfevents.1704469425.DESKTOP-ELG2GVD.648.0
 trainlogs/deeplab_training_50_epochs/events.out.tfevents.1704469583.DESKTOP-ELG2GVD.21836.0
+/checkpoints/

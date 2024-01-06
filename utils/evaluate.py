@@ -15,8 +15,9 @@ def evaluation(checkpoint_dir, model, data_loader, criterion, optimizer=None):
     for checkpoint_file in checkpoint_files:
         checkpoint_path = os.path.join(checkpoint_dir, checkpoint_file)
         model, optimiser = load_checkpoint(checkpoint_path, model, optimizer)
-        evaluate_model(model, data_loader, criterion)
-        print()
+        loss, accuracy, specificity, precision, false_discovery_rate, recall, f1 = evaluate_model(model, data_loader, criterion)
+
+    #TODO: save metrics to file, generate diagrams, etc.
 
 
 # Example usage
@@ -57,14 +58,18 @@ def evaluate_model(model, data_loader, criterion):
     false_discovery_rate = calculate_rates(false_positives, true_positives + false_positives)
     recall = calculate_rates(true_positives, true_positives + false_negatives)
     f1 = f1_score(precision, recall)
+    test_loss = calculate_rates(total_loss, len(data_loader))
 
-    print(f'Test Loss: {total_loss / len(data_loader)}')
+    print(f'Test Loss: {test_loss}')
     print(f'Test Accuracy: {accuracy}')
     print(f'Specificity: {specificity}')
     print(f'Precision: {precision}')
     print(f'False Discovery Rate: {false_discovery_rate}')
     print(f'Recall: {recall}')
     print(f'F1 Score: {f1}')
+    print()
+
+    return (test_loss, accuracy, specificity, precision, false_discovery_rate, recall, f1)
 
 def calculate_rates(numerator, denominator):
     if denominator == 0:

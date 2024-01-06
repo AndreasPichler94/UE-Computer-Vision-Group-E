@@ -1,5 +1,9 @@
 import sys
+
+import numpy as np
 import torch
+import collections
+
 
 from aos_loader import _get_dataloader
 from evaluate import evaluate_model
@@ -23,18 +27,18 @@ def check_gpu_availability():
 def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_epoch=0):
     writer = SummaryWriter(f'trainlogs/deeplab_training_{num_epochs}_epochs')
     device = torch.device("cuda" if check_gpu_availability() else "cpu")
-
+    res = (256, 256)
     batch_size = 15
     train_loader = _get_dataloader(
         "./data/train/",
         focal_heights=focal_heights,
-        image_resolution=(512, 512),
+        image_resolution=res,
         batch_size=batch_size,
     )
     test_loader = _get_dataloader(
         "./data/test/",
         focal_heights=focal_heights,
-        image_resolution=(512, 512),
+        image_resolution=res,
         batch_size=batch_size,
     )
 
@@ -45,9 +49,15 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
                     state[k] = v.to(device)
 
     rounding_threshold = 0.8  # round to 0 below this value
+    deq = collections.deque(maxlen=50) # last 50 loss values
+    def get_running_loss():
+        if len(deq):
+            return np.mean(list(deq))
+        else:
+            return 0
+
     for epoch in range(current_epoch, num_epochs):
         model.train()
-        running_loss = 0.0
         print(f"Number of samples {len(train_loader)}")
         print(f"Training epoch {epoch}")
         for ind, (inputs, labels) in tqdm(enumerate(train_loader)):
@@ -76,7 +86,7 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
                     target_tensor = rounded[0]
 
                 if (ind - 5) % 10 == 0:
-                    print(f"Showing network outputs... Loss: {running_loss / (ind + 1)}")
+                    print(f"Showing network outputs... Loss: {get_running_loss()}")
                     visualize_tensors("visualization", epoch, ind, input_tensor=inputs[0][0],
                                       prediction_tensor=prediction_tensor,
                                       target_tensor=target_tensor, ground_truth=labels[0])
@@ -98,14 +108,14 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
             loss.backward()
             model.optimizer.step()
 
-            running_loss += loss.item()
+            deq.append(loss.item())
 
             if ind % 1000 == 0:
-                print(f"Iteration {ind}, Loss: {running_loss/len(train_loader)}")
+                print(f"Iteration {ind}, Loss: {get_running_loss()}")
                 save_checkpoint(model, model.optimizer, ind, epoch, checkpoint_dir='./checkpoints')
-                writer.add_scalar('Loss/train', running_loss/(ind + 1), epoch * len(train_loader) + ind)
+                writer.add_scalar('Loss/train', get_running_loss(), epoch * len(train_loader) + ind)
 
-        print(f"Epoch {epoch}, Loss: {running_loss/len(train_loader)}")
+        print(f"Epoch {epoch}, Loss: {get_running_loss()}")
 
         model.eval()
         valid_loss = 0.0
@@ -118,8 +128,11 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
                 outputs = model(inputs)
 
                 if model.model_name == "UNet":
-                    rounded = (labels > rounding_threshold).squeeze(1).long()
-                    loss = model.criterion(outputs, rounded)
+                    if model.pixel_out:
+                        loss = model.criterion(outputs, labels)
+                    else:
+                        rounded = (labels > rounding_threshold).squeeze(1).long()
+                        loss = model.criterion(outputs, rounded)
                 else:
                     loss = model.criterion(outputs["out"], labels.squeeze(1).long())
 
@@ -176,7 +189,7 @@ def visualize_tensors(filename, epoch, ind, input_tensor, prediction_tensor, tar
 
 def calculate_mean_iou(preds, labels, smooth=1e-6):
     preds = torch.argmax(preds, dim=1)
-    preds = preds.view(-1)  
+    preds = preds.view(-1)
     labels = labels.view(-1).long()
 
     num_classes = max(preds.max(), labels.max()) + 1
@@ -188,7 +201,7 @@ def calculate_mean_iou(preds, labels, smooth=1e-6):
         intersection = (pred_inds & target_inds).sum().item()
         union = (pred_inds | target_inds).sum().item() - intersection
 
-        iou = (intersection + smooth) / (union + smooth) 
+        iou = (intersection + smooth) / (union + smooth)
         mean_iou += iou
 
     return mean_iou / (num_classes - 1)

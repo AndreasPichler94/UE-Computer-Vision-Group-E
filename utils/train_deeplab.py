@@ -87,15 +87,18 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
 
                 if (ind - 5) % 10 == 0:
                     print(f"Showing network outputs... Loss: {get_running_loss()}")
-                    visualize_tensors(ind, input_tensor=inputs[0][0].unsqueeze(0),
+                    visualize_tensors("visualization", epoch, ind, input_tensor=inputs[0][0],
                                       prediction_tensor=prediction_tensor,
                                       target_tensor=target_tensor, ground_truth=labels[0])
             elif model.model_name == "Deeplab":
                 if ind % 100 == 0:
                     # rounded = torch.where(labels >= 200, torch.tensor(1, device=labels.device), torch.tensor(0, device=labels.device))
                     print("Showing network outputs...")
-                    visualize_tensors(ind, input_tensor=inputs[0][0],
+                    visualize_tensors("visualization", epoch, ind, input_tensor=inputs[0][0],
                                       prediction_tensor=torch.argmax(outputs["out"][0], dim=0, keepdim=True),
+                                      target_tensor=labels[0], ground_truth=labels[0])
+                    visualize_tensors("visualization_probabilities", epoch, ind, input_tensor=inputs[0][0],
+                                      prediction_tensor=torch.softmax(outputs["out"][0], 0)[1, :, :],
                                       target_tensor=labels[0], ground_truth=labels[0])
 
                 loss = model.criterion(outputs["out"], labels.squeeze(1).long())
@@ -147,7 +150,7 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
     # evaluate_model(model, train_loader, torch.nn.CrossEntropyLoss())
     writer.close()
 
-def visualize_tensors(ind, input_tensor, prediction_tensor, target_tensor, ground_truth, cmap='gray'):
+def visualize_tensors(filename, epoch, ind, input_tensor, prediction_tensor, target_tensor, ground_truth, cmap='gray'):
     # Ensure the tensors are detached and moved to cpu
     input_tensor = input_tensor.detach().cpu()
     prediction_tensor = prediction_tensor.detach().cpu()
@@ -177,24 +180,27 @@ def visualize_tensors(ind, input_tensor, prediction_tensor, target_tensor, groun
     # Display the plot
     plt.tight_layout()
     # plt.show()
-    plt.savefig(f"visualization_frame{ind}.png")
+    plt.savefig(f"{filename}_{epoch}_{ind}.png")
 
 
 def calculate_mean_iou(preds, labels, smooth=1e-6):
     preds = torch.argmax(preds, dim=1)
-    num_classes = preds.shape[1]
-    labels = labels.squeeze(1)
-    print(f"num_classes: {num_classes}")
+    preds = preds.view(-1)
+    labels = labels.view(-1).long()
+
+    num_classes = max(preds.max(), labels.max()) + 1
     mean_iou = 0.0
-    for cls in range(1, num_classes): 
+    for cls in range(1, num_classes):
         pred_inds = (preds == cls)
         target_inds = (labels == cls)
-        intersection = (pred_inds[target_inds]).long().sum().item()
-        total = (pred_inds.long().sum().item() + target_inds.long().sum().item() - intersection)
-        iou = (intersection + smooth) / (total + smooth)
+
+        intersection = (pred_inds & target_inds).sum().item()
+        union = (pred_inds | target_inds).sum().item() - intersection
+
+        iou = (intersection + smooth) / (union + smooth)
         mean_iou += iou
 
-    return mean_iou / num_classes
+    return mean_iou / (num_classes - 1)
 
 # Create some random data for example purpose
 input_tensor = torch.rand((1, 512, 512))

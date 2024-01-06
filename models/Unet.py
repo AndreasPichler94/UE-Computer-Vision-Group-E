@@ -77,7 +77,7 @@ class OutConv(nn.Module):
     
 #created by JW
 class UNetSmall(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
+    def __init__(self, n_channels, n_classes, bilinear=False, pixel_out = True):
         super(UNetSmall, self).__init__()
         self.model_name = "UNet"
 
@@ -128,7 +128,7 @@ class UNetSmall(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
+    def __init__(self, n_channels, n_classes, bilinear=False, pixel_out= True):
         super(UNet, self).__init__()
         self.model_name = "UNet"    #JW
         self.n_channels = n_channels

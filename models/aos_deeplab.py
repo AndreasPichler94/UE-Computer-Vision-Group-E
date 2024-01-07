@@ -1,6 +1,8 @@
 import torch
 import torchvision
-
+import sys
+sys.path.append("./utils")
+from train_deeplab import check_gpu_availability
 
 class AosDeepLab(torch.nn.Module):
     def __init__(self, n_channels, n_classes):
@@ -39,7 +41,11 @@ class AosDeepLab(torch.nn.Module):
         )
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
-        self.criterion = torch.nn.CrossEntropyLoss()
+        background_weight = 0.000281
+        person_weight = 1.9997
+        device = torch.device("cuda" if check_gpu_availability() else "cpu")
+        class_weights = torch.FloatTensor([background_weight, person_weight]).to(device)
+        self.criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
 
     def forward(self, x):
         return self.deeplab(x)

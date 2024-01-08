@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import torch
+from matplotlib import pyplot as plt
 
 from checkpoint import load_checkpoint
 
@@ -11,13 +12,19 @@ from checkpoint import load_checkpoint
 # checkpoint_dir = ...  # Path to the directory containing checkpoints
 def evaluation(checkpoint_dir, model, data_loader, criterion, optimizer=None):
     checkpoint_files = [f for f in os.listdir(checkpoint_dir) if f.endswith(".pth")]
-
+    test_losses = []
     for checkpoint_file in checkpoint_files:
         checkpoint_path = os.path.join(checkpoint_dir, checkpoint_file)
         model, optimiser = load_checkpoint(checkpoint_path, model, optimizer)
         loss, accuracy, specificity, precision, false_discovery_rate, recall, f1 = evaluate_model(model, data_loader, criterion)
+        test_losses.append(loss)
 
-    #TODO: save metrics to file, generate diagrams, etc.
+    plt.plot(test_losses, marker='o', linestyle='-', color='b')
+    plt.title('Test Loss Over Time')
+    plt.xlabel('Test Iteration')
+    plt.ylabel('Test Loss')
+    plt.grid(True)
+    plt.show()
 
 
 # Example usage
@@ -38,6 +45,10 @@ def evaluate_model(model, data_loader, criterion):
         for (inputs, labels) in data_loader:
             outputs = model(inputs)
             labels = labels.squeeze(dim=1)
+
+            # check if outputs are dictionary
+            if isinstance(outputs, dict):
+                outputs = outputs["out"]
 
             loss = criterion(outputs, labels.long())
             total_loss += loss.item()
@@ -61,13 +72,13 @@ def evaluate_model(model, data_loader, criterion):
     test_loss = calculate_rates(total_loss, len(data_loader))
 
     print(f'Test Loss: {test_loss}')
-    print(f'Test Accuracy: {accuracy}')
-    print(f'Specificity: {specificity}')
-    print(f'Precision: {precision}')
-    print(f'False Discovery Rate: {false_discovery_rate}')
-    print(f'Recall: {recall}')
-    print(f'F1 Score: {f1}')
-    print()
+    # print(f'Test Accuracy: {accuracy}')
+    # print(f'Specificity: {specificity}')
+    # print(f'Precision: {precision}')
+    # print(f'False Discovery Rate: {false_discovery_rate}')
+    # print(f'Recall: {recall}')
+    # print(f'F1 Score: {f1}')
+    # print()
 
     return (test_loss, accuracy, specificity, precision, false_discovery_rate, recall, f1)
 

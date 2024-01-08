@@ -2,7 +2,8 @@ import unittest
 import torch
 
 from checkpoint import load_checkpoint
-from models.Unet import UNetSmall
+from models.Unet import UNetSmall, UNet
+from models.aos_deeplab import AosDeepLab
 from utils.aos_loader import _get_dataloader
 from utils.evaluate import evaluate_model, evaluation
 
@@ -14,9 +15,10 @@ class TestEvaluateModel(unittest.TestCase):
     # check if you have correct path to your test data
     # run test
     def test_evaluate_model(self):
-        checkpoint_path = "../checkpoints/checkpoint_20240105_173304.pth"
+        checkpoint_path = "../checkpoints/checkpoint_20240105_185338.pth"
 
-        model = UNetSmall(10, 2)
+        #model = UNetSmall(10, 2)
+        model = AosDeepLab(10, 2)
         model, optimiser = load_checkpoint(checkpoint_path, model, optimizer=None)
 
         criterion = torch.nn.CrossEntropyLoss()
@@ -57,4 +59,6 @@ class TestEvaluateModel(unittest.TestCase):
             "-2.4",
         )
         test_loader = _get_dataloader("../data/test", focal_heights=focal_heights, image_resolution=(128, 128))
-        evaluation("../checkpoints", UNetSmall(10, 2), test_loader, torch.nn.CrossEntropyLoss())
+        #model = UNet(10, 2)
+        model = AosDeepLab(10, 2)
+        evaluation("../checkpoints", model, test_loader, torch.nn.CrossEntropyLoss())

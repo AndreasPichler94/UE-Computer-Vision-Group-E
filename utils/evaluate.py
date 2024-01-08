@@ -23,6 +23,7 @@ def evaluation(checkpoint_dir, model, data_loader, criterion, optimizer=None):
     plt.title('Test Loss Over Time')
     plt.xlabel('Test Iteration')
     plt.ylabel('Test Loss')
+    plt.yscale('log')
     plt.grid(True)
     plt.show()
 

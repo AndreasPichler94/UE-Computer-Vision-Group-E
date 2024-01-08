@@ -6,7 +6,7 @@ import collections
 
 
 from aos_loader import _get_dataloader
-from evaluate import evaluate_model
+# from evaluate import evaluate_model
 sys.path.append("./models")
 from unet_2.unet_model import UNet, UNetSmall
 sys.path.append(".")
@@ -27,7 +27,7 @@ def check_gpu_availability():
 def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_epoch=0):
     writer = SummaryWriter(f'trainlogs/deeplab_training_{num_epochs}_epochs')
     device = torch.device("cuda" if check_gpu_availability() else "cpu")
-    res = (256, 256)
+    res = (512, 512)
     batch_size = 15
     train_loader = _get_dataloader(
         "./data/train/",
@@ -240,6 +240,6 @@ if __name__ == "__main__":
 
     iteration, epoch = get_checkpoint(model, model.optimizer)
 
-    trained_model = train_deeplab(model, focal_heights,  num_epochs=100, current_epoch=epoch, current_index=iteration)
+    trained_model = train_deeplab(model, focal_heights,  num_epochs=75, current_epoch=epoch, current_index=iteration)
 
     torch.save(trained_model.state_dict(), "UnetSmall_model_30epochs.pth")

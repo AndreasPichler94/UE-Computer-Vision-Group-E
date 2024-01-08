@@ -11,7 +11,7 @@ from checkpoint import load_checkpoint
 # optimizer = ...  # Your PyTorch optimizer
 # checkpoint_dir = ...  # Path to the directory containing checkpoints
 def evaluation(checkpoint_dir, model, data_loader, criterion, optimizer=None):
-    checkpoint_files = [f for f in os.listdir(checkpoint_dir) if f.endswith(".pth")]
+    checkpoint_files = sorted([f for f in os.listdir(checkpoint_dir) if f.endswith(".pth")])
     test_losses = []
     for checkpoint_file in checkpoint_files:
         checkpoint_path = os.path.join(checkpoint_dir, checkpoint_file)

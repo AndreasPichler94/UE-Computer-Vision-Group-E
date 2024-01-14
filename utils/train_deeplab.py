@@ -63,7 +63,7 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
         for ind, (inputs, labels) in tqdm(enumerate(train_loader)):
             inputs, labels = inputs.to(device), labels.to(device)
 
-            if model.model_name == "Deeplab":
+            if model.model_name == "Deeplab" and model.pixel_out is False:
                 threshold = 0.7843
                 labels = torch.where(labels > threshold,
                                      torch.tensor(1.0, device=labels.device, dtype=torch.long),
@@ -92,16 +92,27 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
                                       target_tensor=target_tensor, ground_truth=labels[0])
             elif model.model_name == "Deeplab":
                 if ind % 100 == 0:
-                    # rounded = torch.where(labels >= 200, torch.tensor(1, device=labels.device), torch.tensor(0, device=labels.device))
                     print("Showing network outputs...")
-                    visualize_tensors("visualization", epoch, ind, input_tensor=inputs[0][0],
-                                      prediction_tensor=torch.argmax(outputs["out"][0], dim=0, keepdim=True),
-                                      target_tensor=labels[0], ground_truth=labels[0])
-                    visualize_tensors("visualization_probabilities", epoch, ind, input_tensor=inputs[0][0],
-                                      prediction_tensor=torch.softmax(outputs["out"][0], 0)[1, :, :],
-                                      target_tensor=labels[0], ground_truth=labels[0])
+                    if model.pixel_out:
+                        visualize_tensors("visualization", epoch, ind, input_tensor=inputs[0][0],
+                                        prediction_tensor=outputs["out"][0],
+                                        target_tensor=labels[0], ground_truth=labels[0])
+                    else:
+                        visualize_tensors("visualization", epoch, ind, input_tensor=inputs[0][0],
+                                        prediction_tensor=torch.argmax(outputs["out"][0], dim=0, keepdim=True),
+                                        target_tensor=labels[0], ground_truth=labels[0])
+                        visualize_tensors("visualization_probabilities", epoch, ind, input_tensor=inputs[0][0],
+                                        prediction_tensor=torch.softmax(outputs["out"][0], 0)[1, :, :],
+                                        target_tensor=labels[0], ground_truth=labels[0])
 
-                loss = model.criterion(outputs["out"], labels.squeeze(1).long())
+                if model.model_name == "Deeplab":
+                    if model.pixel_out:
+                        loss = model.criterion(outputs["out"], labels.squeeze(1))
+                    else:
+                        loss = model.criterion(outputs["out"], labels.squeeze(1).long())
+                else:
+                    loss = model.criterion(outputs["out"], labels.squeeze(1).long())
+
             else:
                 raise NotImplementedError("Only UNet and Deeplab implemented")
 
@@ -134,13 +145,18 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
                         rounded = (labels > rounding_threshold).squeeze(1).long()
                         loss = model.criterion(outputs, rounded)
                 else:
-                    loss = model.criterion(outputs["out"], labels.squeeze(1).long())
+                    if model.pixel_out:
+                        loss = model.criterion(outputs["out"], labels.squeeze(1))
+                    else:
+                        loss = model.criterion(outputs["out"], labels.squeeze(1).long())
 
                 valid_loss += loss.item()
 
                 preds = outputs["out"] if model.model_name != "UNet" else outputs
-                mean_iou = calculate_mean_iou(preds, labels.squeeze(1))
-                total_iou += mean_iou
+
+                if model.model_name == "Deeplab" and model.pixel_out is False:
+                    mean_iou = calculate_mean_iou(preds, labels.squeeze(1))
+                    total_iou += mean_iou
                 total_batches += 1
             
             avg_valid_loss = valid_loss / total_batches
@@ -234,12 +250,12 @@ if __name__ == "__main__":
         "-2.4",
     )
 
-    model = AosDeepLab(len(focal_heights), 2)
+    model = AosDeepLab(len(focal_heights), 1, pixel_out=True)
     # model = UNetSmall(len(focal_heights), 2, pixel_out=False)
     print(f"GPU available: {check_gpu_availability()}")
 
     iteration, epoch = get_checkpoint(model, model.optimizer)
 
-    trained_model = train_deeplab(model, focal_heights,  num_epochs=75, current_epoch=epoch, current_index=iteration)
+    trained_model = train_deeplab(model, focal_heights,  num_epochs=111, current_epoch=epoch, current_index=iteration)
 
     torch.save(trained_model.state_dict(), "UnetSmall_model_30epochs.pth")

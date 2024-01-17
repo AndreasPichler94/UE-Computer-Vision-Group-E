@@ -29,13 +29,13 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
     device = torch.device("cuda" if check_gpu_availability() else "cpu")
     res = (512, 512)
     batch_size = 15
-    train_loader = _get_dataloader(
+    train_loader, _data = _get_dataloader(
         "./data/train/",
         focal_heights=focal_heights,
         image_resolution=res,
         batch_size=batch_size,
     )
-    test_loader = _get_dataloader(
+    test_loader ,  _ = _get_dataloader(
         "./data/test/",
         focal_heights=focal_heights,
         image_resolution=res,
@@ -57,6 +57,7 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
             return 0
 
     for epoch in range(current_epoch, num_epochs):
+        _data.update_epoch(epoch)
         model.train()
         print(f"Number of samples {len(train_loader)}")
         print(f"Training epoch {epoch}")

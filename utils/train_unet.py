@@ -25,13 +25,13 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
     device = torch.device("cuda" if check_gpu_availability() else "cpu")
 
     batch_size = 15
-    train_loader = _get_dataloader(
+    train_loader ,  _ = _get_dataloader(
         "./data/train/",
         focal_heights=focal_heights,
         image_resolution=(512, 512),
         batch_size=batch_size,
     )
-    test_loader = _get_dataloader(
+    test_loader ,  _ = _get_dataloader(
         "./data/test/",
         focal_heights=focal_heights,
         image_resolution=(512, 512),
@@ -242,7 +242,7 @@ def check_gpu_availability():
 def train_unet(model, num_epochs=10):
     device = torch.device("cuda" if check_gpu_availability() else "cpu")
 
-    train_loader = _get_dataloader(
+    train_loader ,  _ = _get_dataloader(
         "./data/train/",
         focal_heights=(
             "0",
@@ -259,7 +259,7 @@ def train_unet(model, num_epochs=10):
         image_resolution=(512, 512),
         batch_size=10,
     )
-    test_loader = _get_dataloader(
+    test_loader ,  _ = _get_dataloader(
         "./data/test/",
         focal_heights=(
             "0",

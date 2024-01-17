@@ -107,7 +107,7 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
 
                 if model.model_name == "Deeplab":
                     if model.pixel_out:
-                        loss = model.criterion(outputs["out"], labels.squeeze(1))
+                        loss = model.criterion(outputs["out"], labels)
                     else:
                         loss = model.criterion(outputs["out"], labels.squeeze(1).long())
                 else:
@@ -146,7 +146,7 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
                         loss = model.criterion(outputs, rounded)
                 else:
                     if model.pixel_out:
-                        loss = model.criterion(outputs["out"], labels.squeeze(1))
+                        loss = model.criterion(outputs["out"], labels)
                     else:
                         loss = model.criterion(outputs["out"], labels.squeeze(1).long())
 

@@ -45,7 +45,7 @@ focal_heights = (
         "-2.4",
     )
 
-train_loader = _get_dataloader(
+train_loader ,  _ = _get_dataloader(
         "./data/train/",
         focal_heights=focal_heights,
         image_resolution=res,

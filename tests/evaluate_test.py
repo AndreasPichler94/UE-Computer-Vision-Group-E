@@ -35,7 +35,7 @@ class TestEvaluateModel(unittest.TestCase):
             "-2.4",
         )
 
-        test_loader = _get_dataloader("../data/test", focal_heights=focal_heights, image_resolution=(128, 128))
+        test_loader ,  _ = _get_dataloader("../data/test", focal_heights=focal_heights, image_resolution=(128, 128))
 
         evaluate_model(model, test_loader, criterion)
 
@@ -58,7 +58,7 @@ class TestEvaluateModel(unittest.TestCase):
             "-2.0",
             "-2.4",
         )
-        test_loader = _get_dataloader("../data/test", focal_heights=focal_heights, image_resolution=(128, 128))
+        test_loader ,  _ = _get_dataloader("../data/test", focal_heights=focal_heights, image_resolution=(128, 128))
         #model = UNet(10, 2)
         model = AosDeepLab(10, 2)
         evaluation("../checkpoints", model, test_loader, torch.nn.CrossEntropyLoss())

@@ -42,7 +42,7 @@ from utils.aos_loader import _get_dataloader
 from utils.evaluate import evaluate_model
 
 if __name__ == "__main__":
-    data_loader = _get_dataloader("./data/train/", focal_height=0, image_resolution=(128, 128), batch_size=1)
+    data_loader ,  _ = _get_dataloader("./data/train/", focal_height=0, image_resolution=(128, 128), batch_size=1)
     evaluate_model(model, data_loader, nn.CrossEntropyLoss())
 
 """

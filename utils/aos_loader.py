@@ -22,7 +22,7 @@ def _get_dataloader(main_dir, image_resolution, focal_heights, **kwargs):
 
     data = AosDataset(main_dir, transform, focal_heights)
 
-    return DataLoader(data, shuffle=True, **kwargs), data
+    return DataLoader(data, shuffle=True, drop_last=True, **kwargs), data
 
 
 class AosDataset(Dataset):

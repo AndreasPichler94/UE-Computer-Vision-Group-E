@@ -2,6 +2,7 @@ import sys
 
 import numpy as np
 import torch
+from piq import ssim, psnr
 import collections
 
 
@@ -13,6 +14,7 @@ sys.path.append(".")
 from checkpoint import save_checkpoint, get_checkpoint
 import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
+
 
 from tqdm import tqdm
 
@@ -28,7 +30,7 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
     writer = SummaryWriter(f'trainlogs/deeplab_training_{num_epochs}_epochs')
     device = torch.device("cuda" if check_gpu_availability() else "cpu")
     res = (512, 512)
-    batch_size = 15
+    batch_size = 2
     train_loader, _data = _get_dataloader(
         "./data/train/",
         focal_heights=focal_heights,
@@ -61,6 +63,10 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
         model.train()
         print(f"Number of samples {len(train_loader)}")
         print(f"Training epoch {epoch}")
+        total_ssim = 0.0
+        total_psnr  = 0.0
+        num_samples = 0
+
         for ind, (inputs, labels) in tqdm(enumerate(train_loader)):
             inputs, labels = inputs.to(device), labels.to(device)
 
@@ -109,6 +115,9 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
                 if model.model_name == "Deeplab":
                     if model.pixel_out:
                         loss = model.criterion(outputs["out"], labels)
+                        normalized_outputs = torch.sigmoid(outputs["out"])
+                        total_ssim  += ssim(normalized_outputs, labels).item()
+                        total_psnr  += psnr(normalized_outputs, labels).item()
                     else:
                         loss = model.criterion(outputs["out"], labels.squeeze(1).long())
                 else:
@@ -117,15 +126,23 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
             else:
                 raise NotImplementedError("Only UNet and Deeplab implemented")
 
+            num_samples += 1
             loss.backward()
             model.optimizer.step()
 
             deq.append(loss.item())
 
-            if ind % 1000 == 0:
+            if (ind + 1) % 1000 == 0:
                 print(f"Iteration {ind}, Loss: {get_running_loss()}")
                 save_checkpoint(model, model.optimizer, ind, epoch, checkpoint_dir='./checkpoints')
+                avg_ssim = total_ssim / num_samples
+                avg_psnr = total_psnr / num_samples
+                writer.add_scalar('SSIM/train', avg_ssim, epoch * len(train_loader) + ind)
+                writer.add_scalar('PSNR/train', avg_psnr, epoch * len(train_loader) + ind)
                 writer.add_scalar('Loss/train', get_running_loss(), epoch * len(train_loader) + ind)
+                total_ssim = 0.0
+                total_psnr = 0.0
+                num_samples = 0
 
         print(f"Epoch {epoch}, Loss: {get_running_loss()}")
 
@@ -133,6 +150,9 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
         valid_loss = 0.0
         total_iou = 0.0
         total_batches = 0
+        total_ssim_valid = 0.0
+        total_psnr_valid = 0.0
+        num_samples_valid = 0
         with torch.no_grad():   
             for inputs, labels in test_loader:
                 inputs, labels = inputs.to(device), labels.to(device)
@@ -148,6 +168,10 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
                 else:
                     if model.pixel_out:
                         loss = model.criterion(outputs["out"], labels)
+                        normalized_outputs = torch.sigmoid(outputs["out"])
+                        total_ssim_valid += ssim(normalized_outputs, labels).item()
+                        total_psnr_valid += psnr(normalized_outputs, labels).item()
+                        num_samples_valid += 1
                     else:
                         loss = model.criterion(outputs["out"], labels.squeeze(1).long())
 
@@ -162,10 +186,15 @@ def train_deeplab(model, focal_heights, num_epochs=10, current_index=0, current_
             
             avg_valid_loss = valid_loss / total_batches
             avg_valid_iou = total_iou / total_batches
+            avg_ssim_valid = total_ssim_valid / num_samples_valid
+            avg_psnr_valid = total_psnr_valid / num_samples_valid
+            writer.add_scalar('SSIM/validation', avg_ssim_valid, epoch)
+            writer.add_scalar('PSNR/validation', avg_psnr_valid, epoch)
             print(f"Validation Loss: {avg_valid_loss}")
             print(f"Validation Mean IoU: {avg_valid_iou}")
             writer.add_scalar('Loss/validation', avg_valid_loss, epoch)
             writer.add_scalar('Mean IoU/validation', avg_valid_iou, epoch)
+
 
     # evaluate_model(model, train_loader, torch.nn.CrossEntropyLoss())
     writer.close()
@@ -257,6 +286,6 @@ if __name__ == "__main__":
 
     iteration, epoch = get_checkpoint(model, model.optimizer)
 
-    trained_model = train_deeplab(model, focal_heights,  num_epochs=111, current_epoch=epoch, current_index=iteration)
+    trained_model = train_deeplab(model, focal_heights,  num_epochs=20, current_epoch=epoch, current_index=iteration)
 
-    torch.save(trained_model.state_dict(), "UnetSmall_model_30epochs.pth")
+    torch.save(trained_model.state_dict(), "deeplab_resnet101_20_epochs.pth")

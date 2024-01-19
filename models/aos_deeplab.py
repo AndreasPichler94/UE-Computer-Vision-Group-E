@@ -4,7 +4,7 @@ import sys
 sys.path.append("./utils")
 from train_deeplab import check_gpu_availability
 from torchvision.models.segmentation import DeepLabV3_MobileNet_V3_Large_Weights
-from torchvision.models.segmentation import DeepLabV3_ResNet50_Weights
+from torchvision.models.segmentation import DeepLabV3_ResNet101_Weights
 
 class AosDeepLab(torch.nn.Module):
     def __init__(self, n_channels, n_classes, pixel_out = True):
@@ -14,30 +14,22 @@ class AosDeepLab(torch.nn.Module):
 
         self.pixel_out = pixel_out
 
-        self.deeplab = torchvision.models.segmentation.deeplabv3_mobilenet_v3_large(
-            weights=DeepLabV3_MobileNet_V3_Large_Weights.DEFAULT
-        )
-        # self.deeplab = torchvision.models.segmentation.deeplabv3_resnet50(
-        #     weights=DeepLabV3_ResNet50_Weights.DEFAULT
+        # self.deeplab = torchvision.models.segmentation.deeplabv3_mobilenet_v3_large(
+        #     weights=DeepLabV3_MobileNet_V3_Large_Weights.DEFAULT
         # )
-        # replacing first block to allow 10 channel input
-        first_layer_name, first_layer_module = next(iter(self.deeplab.backbone.named_children()))
-        first_conv_layer = first_layer_module[0]
-
-        new_first_conv = torch.nn.Conv2d(n_channels, 
-                           first_conv_layer.out_channels, 
-                           kernel_size=first_conv_layer.kernel_size, 
-                           stride=first_conv_layer.stride, 
-                           padding=first_conv_layer.padding, 
-                           bias=False)
-
-        new_first_block = torch.nn.Sequential(
-            new_first_conv,
-            first_layer_module[1],
-            first_layer_module[2]
+        self.deeplab = torchvision.models.segmentation.deeplabv3_resnet101(
+            weights=DeepLabV3_ResNet101_Weights.DEFAULT
         )
-
-        setattr(self.deeplab.backbone, first_layer_name, new_first_block)
+        # replacing first block to allow 10 channel input
+        original_first_layer = self.deeplab.backbone.conv1
+        self.deeplab.backbone.conv1 = torch.nn.Conv2d(
+            10,
+            original_first_layer.out_channels,
+            kernel_size=original_first_layer.kernel_size,
+            stride=original_first_layer.stride,
+            padding=original_first_layer.padding,
+            bias=False,
+        )
 
         self.deeplab.classifier[4] = torch.nn.Conv2d(
             in_channels=self.deeplab.classifier[4].in_channels,

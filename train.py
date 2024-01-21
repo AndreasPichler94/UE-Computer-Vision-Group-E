@@ -10,7 +10,7 @@ from aos_loader import _get_dataloader
 # from evaluate import evaluate_model
 sys.path.append("./models")
 from unet_2.unet_model import UNet, UNetSmall
-sys.path.append(".")
+sys.path.append("utils")
 from checkpoint import save_checkpoint, get_checkpoint
 import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter

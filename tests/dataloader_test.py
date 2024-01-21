@@ -15,11 +15,14 @@ class TestDataLoader(unittest.TestCase):
             self.assertEqual(type(y), torch.Tensor)
 
         transformed_images = []
+        transformed_images_y = []
         for i in range(8):
             _data.update_epoch(i)
             transformed_images.append(_data[0][0][0])
+            transformed_images.append(_data[0][1][0])
 
         self.display_images_side_by_side(*transformed_images)
+        self.display_images_side_by_side(*transformed_images_y)
 
     def display_images_side_by_side(self, *images):
         # Create sub-plots with larger figure size

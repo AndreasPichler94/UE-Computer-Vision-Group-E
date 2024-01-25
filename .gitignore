@@ -4,9 +4,6 @@ __pycache__
 *.pyc
 .venv
 /trainlogs/
-/checkpoints/
 /viz/
 /backup/
-*.pickle
-*.pth
 *events.out.tfevents*

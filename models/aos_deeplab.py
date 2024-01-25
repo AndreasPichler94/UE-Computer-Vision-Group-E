@@ -2,7 +2,7 @@ import torch
 import torchvision
 import sys
 sys.path.append("./utils")
-from train_deeplab import check_gpu_availability
+from train import check_gpu_availability
 from torchvision.models.segmentation import DeepLabV3_MobileNet_V3_Large_Weights
 from torchvision.models.segmentation import DeepLabV3_ResNet101_Weights
 

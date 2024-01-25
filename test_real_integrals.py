@@ -6,11 +6,10 @@ from PIL import Image
 import os
 from torchvision import transforms
 sys.path.append("./utils")
-from utils import train_deeplab
-
+from train import check_gpu_availability, visualize_tensors
 
 def test_with_real_integrals(model, folder):
-    device = torch.device("cuda" if train_deeplab.check_gpu_availability() else "cpu")
+    device = torch.device("cuda" if check_gpu_availability() else "cpu")
     res = (512, 512)
     focal_points = [
         "0.00",
@@ -40,7 +39,7 @@ def test_with_real_integrals(model, folder):
     with torch.no_grad():
         outputs = model(input_tensor)
 
-    train_deeplab.visualize_tensors(
+    visualize_tensors(
         "visualization_real_integral",
         0,
         0,
@@ -76,4 +75,4 @@ if __name__ == "__main__":
     model = AosDeepLab(len(focal_heights), 1, pixel_out=True)    
 
     iteration, epoch = get_checkpoint(model, model.optimizer)
-    test_with_real_integrals(model, "./focal_stack/")
+    test_with_real_integrals(model, "./real_integrals/")

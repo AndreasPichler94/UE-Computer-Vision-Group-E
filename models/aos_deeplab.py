@@ -22,14 +22,25 @@ class AosDeepLab(torch.nn.Module):
         )
         # replacing first block to allow 10 channel input
         original_first_layer = self.deeplab.backbone.conv1
-        self.deeplab.backbone.conv1 = torch.nn.Conv2d(
-            10,
+        original_weights = original_first_layer.weight.data
+        mean_weights = original_weights.mean(dim=1, keepdim=True)
+        new_weights = mean_weights.repeat(1, 10, 1, 1)
+
+        new_first_layer = torch.nn.Conv2d(
+            n_channels,
             original_first_layer.out_channels,
             kernel_size=original_first_layer.kernel_size,
             stride=original_first_layer.stride,
             padding=original_first_layer.padding,
-            bias=False,
+            bias=False if not original_first_layer.bias else True
         )
+
+        new_first_layer.weight.data = new_weights
+
+        if original_first_layer.bias is not None:
+            new_first_layer.bias.data = original_first_layer.bias.data
+
+        self.deeplab.backbone.conv1 = new_first_layer
 
         self.deeplab.classifier[4] = torch.nn.Conv2d(
             in_channels=self.deeplab.classifier[4].in_channels,
@@ -37,6 +48,7 @@ class AosDeepLab(torch.nn.Module):
             kernel_size=self.deeplab.classifier[4].kernel_size,
             stride=self.deeplab.classifier[4].stride,
             padding=self.deeplab.classifier[4].padding,
+            bias=True
         )
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)

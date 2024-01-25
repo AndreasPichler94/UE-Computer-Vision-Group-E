@@ -1,14 +1,6 @@
-# TODO: work in progress
 # Use an official Python runtime as a parent image
-FROM python:3.12.1-windowsservercore-1809
+FROM python:3.11.7-bookworm
 
-
-
-# Download and install Python 3.7.9
-#ADD https://www.python.org/ftp/python/3.7.9/python-3.7.9-amd64.exe C:\python-3.7.9-amd64.exe
-#RUN C:\python-3.7.9-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 && \
-#    del C:\python-3.7.9-amd64.exe
-# Set the working directory to /app
 WORKDIR /app
 
 # Copy the current directory contents into the container at /app

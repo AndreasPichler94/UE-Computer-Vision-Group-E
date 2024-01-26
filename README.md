@@ -25,10 +25,11 @@ This is a step-by-step guide to creating dokcer image, running the code in a doc
 #### Run the docker image
 1. Run the following command to list the docker images: `docker image ls`
 2. Find the image you just created and copy the image name
-3. Run the following command to run the docker image: `docker run <image_name> tail -f`
-4. Open a new terminal
-5. Run the following command to list the containers and copy the id of the container: `docker container ls`
-6. Navigate into the running container: `docker run -it <container_id> bash`
+3. **__OPTIONAL__** Run the command to print Hello World to check functionality: `docker run <image_name>`
+4. Run the following command to run the docker image: `docker run <image_name> tail -f`
+5. Open a new terminal
+6. Run the following command to list the containers and copy the id of the container: `docker container ls`
+7. Navigate into the running container: `docker run -it <container_id> bash`
 
 #### Copy additional files into the docker container
 1. Open a new terminal

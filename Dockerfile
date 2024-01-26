@@ -18,4 +18,4 @@ ENV NAME World
 
 # Run test.py when the container launches
 CMD ["python", "hello.py"]
-CMD ["python", "test_real_integrals.py"]
+#CMD ["python", "test_real_integrals.py"]

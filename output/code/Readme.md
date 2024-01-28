@@ -26,7 +26,7 @@ Once the environment is set up correctly please move on to the "Execute the code
 
 
 ## Step-by-Step Guide to Docker
-This is a step-by-step guide to creating dokcer image, running the code in a docker container and retrieving results.
+This is a step-by-step guide to creating docker image, running the code in a docker container and retrieving results.
 
 #### Create a docker image
 1. Open a terminal and navigate to the "code" directory
@@ -48,9 +48,12 @@ This is a step-by-step guide to creating dokcer image, running the code in a doc
 `docker run -it -v "C:\Users/yourUsername/path/to/code/:/code --name aos_e8 --gpus all aos_e8`
 3. If this doesn't work, try it without the GPU flags (Note: Code may not work properly without GPU):
 `docker run -it -v "C:\Users/yourUsername/path/to/code/:/code --name aos_e8 aos_e8`
-4. Run the following command to execute the code for testing on test data that the model has never seen: `python test.py`. As a comparison the outputs that we generated can be found under: 
-5. Run the following command to execute the code for testing on real integrals: `python test_real_integrals.py`
-6. Run the following command to train a new model: `python train.py`. The train data should be in the same directory under `./train`, test data under `test`.
+
+# Execute the code
+
+1. Run the following command to execute the code for testing on test data that the model has never seen: `python test.py`. As a comparison the outputs that we generated can be found under: 
+2. Run the following command to execute the code for testing on real integrals: `python test_real_integrals.py`
+3. Run the following command to train a new model: `python train.py`. The train data should be in the same directory under `./train`, test data under `test`.
 
 
 # Retrieve results

@@ -27,10 +27,12 @@ This is a step-by-step guide to creating dokcer image, running the code in a doc
 
 
 #### Run the docker image
-3. Run the following command to run the docker image from the "code" directory: 
-`docker run  -it -v ./:/code --name aos_e8 --gpus all aos_e8`  
-
-
+1. Run the following command to run the docker image from the "code" directory: 
+`docker run -it -v ./:/code --name aos_e8 --gpus all aos_e8`  
+2. On some Windows machines, you may need to modify this command:
+`docker run -it -v "C:\Users/yourUsername/path/to/code/:/code --name aos_e8 --gpus all aos_e8`
+3. If this doesn't work, try it without the GPU flags:
+`docker run -it -v "C:\Users/yourUsername/path/to/code/:/code --name aos_e8 aos_e8`
 
 
 

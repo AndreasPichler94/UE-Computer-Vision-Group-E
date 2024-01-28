@@ -11,6 +11,13 @@ Once the environment is set up correctly please move on to the "Execute the code
 
 ## Step-by-Step Guide to Anaconda
 
+
+### Required files
+1. The necessary model weights can be downloaded from: https://www.dropbox.com/scl/fi/b42egymxrsse1mgcm4z53/weights.zip?rlkey=45i4ouaszta5y6dabyzmyeqjk&dl=0
+2. The test data (not seen by the model before) can be downloaded from: https://www.dropbox.com/scl/fi/xsrz91uc4wawso7cgtnvq/test-data-folder.zip?rlkey=a57jh9yml63gxk9xx7jbt40m0&dl=0
+3. The model weights should be put inside the "weights" folder, the test data inside the "test data folder" folder within the "code" directory
+
+
 #### Create a virtual environment
 1. Open a terminal and navigate to the "code" directory
 2. Run the following command to create a new virtual environment: `conda create -n "aos_e8" python=3.11.7`

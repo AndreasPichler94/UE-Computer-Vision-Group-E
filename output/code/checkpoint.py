@@ -5,7 +5,7 @@ import sys
 from datetime import datetime
 
 
-def get_checkpoint(model, optimizer, cuda_available, checkpoint_dir="./checkpoints"):
+def get_checkpoint(model, optimizer, cuda_available, checkpoint_dir="./weights"):
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
@@ -16,20 +16,20 @@ def get_checkpoint(model, optimizer, cuda_available, checkpoint_dir="./checkpoin
         if cuda_available:
             checkpoint = torch.load(latest_checkpoint)
         else:
-            checkpoint = torch.load(latest_checkpointmap_location=torch.device('cpu')
+            checkpoint = torch.load(latest_checkpoint, map_location=torch.device('cpu'))
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         current_index = checkpoint['current_index']
         current_batch = checkpoint['current_batch']
         print(
-            f"Checkpoint loaded from {latest_checkpoint}. Current index: {current_index}, Current batch: {current_batch}")
+            f"Checkpoint loaded from {latest_checkpoint}. Current index: {current_index}, Current epoch: {current_batch}")
         return current_index, current_batch
     else:
         print("No checkpoints found. Training from scratch.")
         return 0, 0
 
 
-def save_checkpoint(model, optimizer, current_index, current_batch, checkpoint_dir='./checkpoints'):
+def save_checkpoint(model, optimizer, current_index, current_batch, checkpoint_dir='./weights'):
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 

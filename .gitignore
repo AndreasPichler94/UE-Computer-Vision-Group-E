@@ -7,3 +7,9 @@ __pycache__
 /viz/
 /backup/
 *events.out.tfevents*
+/output/code/LFR
+/output/code/weights
+/output/code/Result folder
+/output/code/test data folder
+/output/code/test
+/output/code/train

@@ -39,7 +39,7 @@ This is a step-by-step guide to creating dokcer image, running the code in a doc
 `docker run -it -v ./:/code --name aos_e8 --gpus all aos_e8`  
 2. On some Windows machines, you may need to modify this command:
 `docker run -it -v "C:\Users/yourUsername/path/to/code/:/code --name aos_e8 --gpus all aos_e8`
-3. If this doesn't work, try it without the GPU flags:
+3. If this doesn't work, try it without the GPU flags (Note: Code may not work properly without GPU):
 `docker run -it -v "C:\Users/yourUsername/path/to/code/:/code --name aos_e8 aos_e8`
 4. Run the following command to execute the code for testing on test data that the model has never seen: `python test.py`. As a comparison the outputs that we generated can be found under: 
 5. Run the following command to execute the code for testing on real integrals: `python test_real_integrals.py`
